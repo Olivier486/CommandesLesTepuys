@@ -49,7 +49,13 @@
                             {% if order.payment_status == 'Payé' %}
                                 <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i> {{ order.payment_status }}</span>
                             {% else %}
-                                <span class="badge bg-warning text-dark"><i class="bi bi-clock-fill me-1"></i> {{ order.payment_status }}</span>
+                                <span class="badge bg-warning text-dark d-block mb-1" style="width: fit-content;"><i class="bi bi-clock-fill me-1"></i> {{ order.payment_status }}</span>
+                                <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="payment_status" value="Payé">
+                                    <button type="submit" class="btn btn-sm btn-outline-success py-0 px-2 fw-bold" style="font-size: 0.75rem;" title="Changer le statut en Payé">
+                                        <i class="bi bi-check2-circle me-1"></i> Marquer comme Payé
+                                    </button>
+                                </form>
                             {% endif %}
                         </td>
                         <td class="text-center pe-4">
@@ -109,16 +115,34 @@
                                             <div class="d-flex justify-content-between align-items-center p-3 border rounded bg-white">
                                                 <div>
                                                     <span class="d-block"><strong>Mode de paiement :</strong> {{ order.payment_method }}</span>
-                                                    <span><strong>État de paiement :</strong> {{ order.payment_status }}</span>
+                                                    <span><strong>État de paiement :</strong>
+                                                        {% if order.payment_status == 'Payé' %}
+                                                            <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i> {{ order.payment_status }}</span>
+                                                        {% else %}
+                                                            <span class="badge bg-warning text-dark"><i class="bi bi-clock-fill me-1"></i> {{ order.payment_status }}</span>
+                                                        {% endif %}
+                                                    </span>
                                                 </div>
                                                 <div class="fs-4 fw-bold text-success">
                                                     Total: {{ "%.2f"|format(order.total_price) }} €
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                                            <button type="button" class="btn btn-success fw-bold" onclick="window.print()"><i class="bi bi-printer-fill me-1"></i> Imprimer pour la préparation</button>
+                                        <div class="modal-footer justify-content-between">
+                                            <div>
+                                                {% if order.payment_status != 'Payé' %}
+                                                <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="payment_status" value="Payé">
+                                                    <button type="submit" class="btn btn-outline-success fw-bold">
+                                                        <i class="bi bi-check-circle-fill me-1"></i> Marquer cette commande comme Payée
+                                                    </button>
+                                                </form>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                                <button type="button" class="btn btn-success fw-bold" onclick="window.print()"><i class="bi bi-printer-fill me-1"></i> Imprimer pour la préparation</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

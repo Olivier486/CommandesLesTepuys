@@ -290,6 +290,16 @@ def admin_orders():
     orders = Order.query.order_by(Order.created_at.desc()).all()
     return render_template('admin_orders.html', orders=orders)
 
+@app.route('/admin/orders/<int:order_id>/update-status', methods=['POST'])
+@admin_required
+def update_order_status(order_id):
+    order = Order.query.get_or_404(order_id)
+    new_status = request.form.get('payment_status', 'Payé').strip()
+    order.payment_status = new_status
+    db.session.commit()
+    flash(f"Le statut de la commande #{order.id} a été mis à jour avec succès : '{new_status}'.", "success")
+    return redirect(url_for('admin_orders'))
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':

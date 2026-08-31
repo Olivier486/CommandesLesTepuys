@@ -41,8 +41,17 @@ def test_admin_orders():
     res = opener.open(req)
     html = res.read().decode('utf-8')
     assert "Espace Fromagerie" in html
-    assert "BON DE COMMANDE" in html or "Détail de la Commande" in html
+    assert "Détail de la Commande" in html or "Marquer comme Payé" in html
     print("Admin access granted & order list rendered successfully.")
+
+    # 4. Test updating order status to 'Payé'
+    update_data = urllib.parse.urlencode({"payment_status": "Payé"}).encode('utf-8')
+    req = urllib.request.Request(f"{BASE_URL}/admin/orders/2/update-status", data=update_data, method="POST")
+    res = opener.open(req)
+    assert res.status == 200
+    html = res.read().decode('utf-8')
+    assert "Le statut de la commande" in html or "mis à jour" in html
+    print("Admin payment status update verified.")
 
 if __name__ == "__main__":
     server_thread = threading.Thread(target=app.run, kwargs={'port': 5000, 'use_reloader': False})
