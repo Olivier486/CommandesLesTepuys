@@ -15,7 +15,7 @@
 
 <div class="card shadow border-0 rounded-3">
     <div class="card-header text-white py-3" style="background-color: var(--header-bg);">
-        <h5 class="mb-0 fw-bold"><i class="bi bg-list-check me-2"></i>Liste des Commandes à Préparer</h5>
+        <h5 class="mb-0 fw-bold"><i class="bi bi-list-check me-2"></i>Liste des Commandes à Préparer</h5>
     </div>
     <div class="card-body p-0">
         {% if orders %}
@@ -57,74 +57,74 @@
                             <button type="button" class="btn btn-sm btn-tepuys fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#orderModal{{ order.id }}">
                                 <i class="bi bi-file-earmark-text-fill me-1"></i> Voir la commande
                             </button>
-                        </td>
-                    </tr>
 
-                    <!-- Modal for 1-Click Order Recap & Details -->
-                    <div class="modal fade" id="orderModal{{ order.id }}" tabindex="-1" aria-labelledby="orderModalLabel{{ order.id }}" aria-hidden="true">
-                        <div class="modal-dialog modal-lg modal-dialog-centered">
-                            <div class="modal-content">
-                                <div class="modal-header text-white" style="background-color: var(--header-bg);">
-                                    <h5 class="modal-title fw-bold" id="orderModalLabel{{ order.id }}">
-                                        <i class="bi bi-basket2-fill text-warning me-2"></i>Détail de la Commande #{{ order.id }}
-                                    </h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body p-4">
-                                    <div class="row mb-3 bg-light p-3 rounded">
-                                        <div class="col-md-6 mb-2">
-                                            <strong>Client :</strong> {{ order.client.prenom }} {{ order.client.nom }}
+                            <!-- Modal for 1-Click Order Recap & Details -->
+                            <div class="modal fade text-start fw-normal" id="orderModal{{ order.id }}" tabindex="-1" aria-labelledby="orderModalLabel{{ order.id }}" aria-hidden="true">
+                                <div class="modal-dialog modal-lg modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header text-white" style="background-color: var(--header-bg);">
+                                            <h5 class="modal-title fw-bold" id="orderModalLabel{{ order.id }}">
+                                                <i class="bi bi-basket2-fill text-warning me-2"></i>Détail de la Commande #{{ order.id }}
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
-                                        <div class="col-md-6 mb-2">
-                                            <strong>Téléphone :</strong> {{ order.client.telephone }}
+                                        <div class="modal-body p-4">
+                                            <div class="row mb-3 bg-light p-3 rounded">
+                                                <div class="col-md-6 mb-2">
+                                                    <strong>Client :</strong> {{ order.client.prenom }} {{ order.client.nom }}
+                                                </div>
+                                                <div class="col-md-6 mb-2">
+                                                    <strong>Téléphone :</strong> {{ order.client.telephone }}
+                                                </div>
+                                                <div class="col-md-6 mb-2">
+                                                    <strong>Adresse :</strong> {{ order.client.adresse }}, {{ order.client.code_postal }} {{ order.client.ville }}
+                                                </div>
+                                                <div class="col-md-6 mb-2">
+                                                    <strong>Email :</strong> {{ order.client.email }}
+                                                </div>
+                                            </div>
+
+                                            <h6 class="fw-bold text-dark mb-2">Articles à préparer :</h6>
+                                            <table class="table table-sm table-bordered align-middle mb-3">
+                                                <thead class="table-secondary">
+                                                    <tr>
+                                                        <th>Produit</th>
+                                                        <th class="text-center" style="width: 100px;">Qté</th>
+                                                        <th class="text-end" style="width: 120px;">Prix Unit.</th>
+                                                        <th class="text-end" style="width: 120px;">Sous-total</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for item in order.items %}
+                                                    <tr>
+                                                        <td class="fw-bold">{{ item.product_name }}</td>
+                                                        <td class="text-center"><span class="badge bg-primary fs-6">{{ item.quantity }}</span></td>
+                                                        <td class="text-end">{{ "%.2f"|format(item.unit_price) }} €</td>
+                                                        <td class="text-end fw-bold">{{ "%.2f"|format(item.unit_price * item.quantity) }} €</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+
+                                            <div class="d-flex justify-content-between align-items-center p-3 border rounded bg-white">
+                                                <div>
+                                                    <span class="d-block"><strong>Mode de paiement :</strong> {{ order.payment_method }}</span>
+                                                    <span><strong>État de paiement :</strong> {{ order.payment_status }}</span>
+                                                </div>
+                                                <div class="fs-4 fw-bold text-success">
+                                                    Total: {{ "%.2f"|format(order.total_price) }} €
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="col-md-6 mb-2">
-                                            <strong>Adresse :</strong> {{ order.client.adresse }}, {{ order.client.code_postal }} {{ order.client.ville }}
-                                        </div>
-                                        <div class="col-md-6 mb-2">
-                                            <strong>Email :</strong> {{ order.client.email }}
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                            <button type="button" class="btn btn-success fw-bold" onclick="window.print()"><i class="bi bi-printer-fill me-1"></i> Imprimer pour la préparation</button>
                                         </div>
                                     </div>
-
-                                    <h6 class="fw-bold text-dark mb-2">Articles à préparer :</h6>
-                                    <table class="table table-sm table-bordered align-middle mb-3">
-                                        <thead class="table-secondary">
-                                            <tr>
-                                                <th>Produit</th>
-                                                <th class="text-center" style="width: 100px;">Qté</th>
-                                                <th class="text-end" style="width: 120px;">Prix Unit.</th>
-                                                <th class="text-end" style="width: 120px;">Sous-total</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for item in order.items %}
-                                            <tr>
-                                                <td class="fw-bold">{{ item.product_name }}</td>
-                                                <td class="text-center"><span class="badge bg-primary fs-6">{{ item.quantity }}</span></td>
-                                                <td class="text-end">{{ "%.2f"|format(item.unit_price) }} €</td>
-                                                <td class="text-end fw-bold">{{ "%.2f"|format(item.unit_price * item.quantity) }} €</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-
-                                    <div class="d-flex justify-content-between align-items-center p-3 border rounded bg-white">
-                                        <div>
-                                            <span class="d-block"><strong>Mode de paiement :</strong> {{ order.payment_method }}</span>
-                                            <span><strong>État de paiement :</strong> {{ order.payment_status }}</span>
-                                        </div>
-                                        <div class="fs-4 fw-bold text-success">
-                                            Total: {{ "%.2f"|format(order.total_price) }} €
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                                    <button type="button" class="btn btn-success fw-bold" onclick="window.print()"><i class="bi bi-printer-fill me-1"></i> Imprimer pour la préparation</button>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
