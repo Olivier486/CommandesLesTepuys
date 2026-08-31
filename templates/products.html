@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}{{ current_category.name if current_category else "Nos Produits" }} - Fromagerie Les Tepuys{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h1 class="fw-bold text-dark mb-1">
+            {% if current_category %}
+                {% if current_category.parent %}
+                    <span class="text-muted fs-4">{{ current_category.parent.name }} &gt;</span> {{ current_category.name }}
+                {% else %}
+                    {{ current_category.name }}
+                {% endif %}
+            {% else %}
+                <i class="bi bi-shop text-warning me-2"></i>Tous nos Produits
+            {% endif %}
+        </h1>
+        <p class="text-muted mb-0">Découvrez nos fromages affinés, charcuteries artisanales, coffrets et spécialités.</p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="{{ url_for('view_cart') }}" class="btn btn-tepuys fw-bold shadow-sm">
+            <i class="bi bi-cart-check me-2"></i>Voir mon panier ({{ cart_count }})
+        </a>
+    </div>
+</div>
+
+<!-- Special Cheese Banner / Subcategory Overview if Cheese category is selected -->
+{% if is_cheese_category %}
+<div class="card bg-white shadow-sm mb-4 border-0 rounded-3 overflow-hidden">
+    <div class="card-body p-4">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <h4 class="fw-bold text-dark mb-3"><i class="bi bi-info-circle-fill text-warning me-2"></i>Les Familles et Catégories de Fromages</h4>
+                <p class="text-secondary">Explorez la richesse de nos 8 familles de fromages. Cliquez sur la catégorie de votre choix pour filtrer directement nos produits :</p>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <a href="{{ url_for('products', cat='fromages') }}" class="btn btn-sm {% if current_category and current_category.slug == 'fromages' %}btn-warning fw-bold{% else %}btn-outline-secondary{% endif %}">
+                        Tous les Fromages
+                    </a>
+                    {% for subcat in cheese_subcategories %}
+                    <a href="{{ url_for('products', cat=subcat.slug) }}" class="btn btn-sm {% if current_category and current_category.slug == subcat.slug %}btn-warning fw-bold{% else %}btn-outline-dark{% endif %}">
+                        {{ subcat.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-lg-5 text-center mt-3 mt-lg-0">
+                <img src="{{ url_for('static', filename='images/familles-categories-fromage.png') }}" alt="Familles de fromage" class="img-fluid rounded shadow-sm border" style="max-height: 220px; object-fit: contain;">
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Category Pills Navigation -->
+<div class="d-flex flex-wrap gap-2 mb-4 pb-2 border-bottom">
+    <a href="{{ url_for('products') }}" class="btn {% if not current_category %}btn-dark fw-bold{% else %}btn-outline-dark{% endif %} btn-sm">
+        Tous
+    </a>
+    <a href="{{ url_for('products', cat='fromages') }}" class="btn {% if current_category and (current_category.slug == 'fromages' or current_category.parent_id) %}btn-dark fw-bold{% else %}btn-outline-dark{% endif %} btn-sm">
+        Fromages
+    </a>
+    <a href="{{ url_for('products', cat='charcuterie') }}" class="btn {% if current_category and current_category.slug == 'charcuterie' %}btn-dark fw-bold{% else %}btn-outline-dark{% endif %} btn-sm">
+        Charcuterie
+    </a>
+    <a href="{{ url_for('products', cat='plateaux') }}" class="btn {% if current_category and current_category.slug == 'plateaux' %}btn-dark fw-bold{% else %}btn-outline-dark{% endif %} btn-sm">
+        Plateaux
+    </a>
+    <a href="{{ url_for('products', cat='boissons') }}" class="btn {% if current_category and current_category.slug == 'boissons' %}btn-dark fw-bold{% else %}btn-outline-dark{% endif %} btn-sm">
+        Boissons
+    </a>
+    <a href="{{ url_for('products', cat='tartinables') }}" class="btn {% if current_category and current_category.slug == 'tartinables' %}btn-dark fw-bold{% else %}btn-outline-dark{% endif %} btn-sm">
+        Tartinables
+    </a>
+</div>
+
+<!-- Products Grid -->
+{% if products %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+    {% for product in products %}
+    <div class="col">
+        <div class="card h-100 card-product shadow-sm">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="badge bg-light text-dark border">{{ product.category.name }}</span>
+                    <span class="fs-5 fw-bold text-success">{{ "%.2f"|format(product.price) }} €</span>
+                </div>
+                <h5 class="card-title fw-bold text-dark">{{ product.name }}</h5>
+                <p class="card-text text-muted small flex-grow-1">
+                    {{ product.description if product.description else "Produit de qualité sélectionné par la Fromagerie Les Tepuys." }}
+                </p>
+
+                <!-- Add to Cart Form -->
+                <form action="{{ url_for('add_to_cart') }}" method="POST" class="mt-3">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">Qté</span>
+                        <input type="number" name="quantity" value="1" min="1" max="50" class="form-control text-center" style="max-width: 70px;">
+                        <button type="submit" class="btn btn-tepuys fw-bold flex-grow-1">
+                            <i class="bi bi-cart-plus me-1"></i> Ajouter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info py-4 text-center my-5 shadow-sm">
+    <i class="bi bi-basket fs-1 text-muted d-block mb-2"></i>
+    <h4 class="fw-bold">Aucun produit disponible dans cette catégorie pour le moment.</h4>
+    <p class="mb-3">L'inventaire de cette catégorie sera chargé prochainement par la fromagerie.</p>
+    <a href="{{ url_for('products') }}" class="btn btn-tepuys">Voir tous les produits</a>
+</div>
+{% endif %}
+{% endblock %}

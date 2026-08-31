@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Connexion - Fromagerie Les Tepuys{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow border-0 rounded-3">
+            <div class="card-header text-white text-center py-3" style="background-color: var(--header-bg);">
+                <h3 class="mb-0 fw-bold"><i class="bi bi-box-arrow-in-right text-warning me-2"></i>Connexion</h3>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('login', next=request.args.get('next', '')) }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label fw-bold">Nom d'utilisateur</label>
+                        <input type="text" class="form-control" id="username" name="username" required placeholder="Saisissez votre identifiant">
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label fw-bold">Mot de passe</label>
+                        <input type="password" class="form-control" id="password" name="password" required placeholder="Saisissez votre mot de passe">
+                    </div>
+
+                    <div class="mt-4 d-grid">
+                        <button type="submit" class="btn btn-tepuys btn-lg fw-bold"><i class="bi bi-shield-lock-fill me-2"></i>Se connecter</button>
+                    </div>
+                </form>
+                <div class="text-center mt-3">
+                    <p class="mb-0">Nouveau client ? <a href="{{ url_for('register') }}" class="text-primary fw-bold">Créer un compte</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

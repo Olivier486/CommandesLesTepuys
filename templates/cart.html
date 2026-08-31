@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Mon Panier - Fromagerie Les Tepuys{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1 class="fw-bold text-dark"><i class="bi bi-cart3 text-warning me-2"></i>Mon Panier</h1>
+        <p class="text-muted">Ajustez vos quantités ou validez votre commande ci-dessous.</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a href="{{ url_for('products') }}" class="btn btn-outline-dark fw-bold">
+            <i class="bi bi-arrow-left me-1"></i> Continuer mes achats
+        </a>
+    </div>
+</div>
+
+{% if cart_items %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 rounded-3 mb-4">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col" class="ps-4">Produit</th>
+                                <th scope="col" class="text-center">Prix Unitaire</th>
+                                <th scope="col" class="text-center" style="width: 150px;">Quantité</th>
+                                <th scope="col" class="text-end">Total</th>
+                                <th scope="col" class="text-center pe-4" style="width: 80px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in cart_items %}
+                            <tr>
+                                <td class="ps-4">
+                                    <span class="fw-bold text-dark d-block">{{ item.name }}</span>
+                                </td>
+                                <td class="text-center fw-semibold">
+                                    {{ "%.2f"|format(item.price) }} €
+                                </td>
+                                <td class="text-center">
+                                    <form action="{{ url_for('update_cart') }}" method="POST" class="d-flex justify-content-center">
+                                        <input type="hidden" name="product_id" value="{{ item.id }}">
+                                        <div class="input-group input-group-sm" style="max-width: 110px;">
+                                            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="99" class="form-control text-center" onchange="this.form.submit()">
+                                            <button type="submit" class="btn btn-outline-secondary" title="Mettre à jour"><i class="bi bi-check"></i></button>
+                                        </div>
+                                    </form>
+                                </td>
+                                <td class="text-end fw-bold text-success">
+                                    {{ "%.2f"|format(item.subtotal) }} €
+                                </td>
+                                <td class="text-center pe-4">
+                                    <form action="{{ url_for('remove_from_cart', product_id=item.id) }}" method="POST">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer le produit">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3">
+                <form action="{{ url_for('clear_cart') }}" method="POST" onsubmit="return confirm('Voulez-vous vraiment vider votre panier ?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger fw-bold">
+                        <i class="bi bi-trash3 me-1"></i> Vider le panier
+                    </button>
+                </form>
+                <span class="text-muted small">Les modifications sont enregistrées automatiquement.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Box -->
+    <div class="col-lg-4">
+        <div class="card shadow border-0 rounded-3">
+            <div class="card-header text-white py-3" style="background-color: var(--header-bg);">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-receipt me-2"></i>Récapitulatif</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Nombre d'articles :</span>
+                    <span class="fw-bold">{{ total_items_count }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="text-muted">Total des produits :</span>
+                    <span class="fw-bold fs-5 text-dark">{{ "%.2f"|format(total_amount) }} €</span>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <span class="fs-5 fw-bold">Total TTC :</span>
+                    <span class="fs-3 fw-bold text-success">{{ "%.2f"|format(total_amount) }} €</span>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('checkout') }}" class="btn btn-tepuys btn-lg fw-bold shadow-sm">
+                        <i class="bi bi-credit-card-fill me-2"></i> Valider le Panier
+                    </a>
+                    <a href="{{ url_for('products') }}" class="btn btn-light border text-muted">
+                        Ajouter d'autres articles
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning text-center py-5 shadow-sm my-4">
+    <i class="bi bi-cart-x fs-1 text-warning d-block mb-3"></i>
+    <h3 class="fw-bold text-dark">Votre panier est actuellement vide !</h3>
+    <p class="text-muted mb-4">Naviguez dans nos catégories de produits pour garnir votre panier de délicieux fromages et spécialités.</p>
+    <a href="{{ url_for('products') }}" class="btn btn-tepuys btn-lg fw-bold">
+        <i class="bi bi-bag-plus-fill me-2"></i> Découvrir nos produits
+    </a>
+</div>
+{% endif %}
+{% endblock %}

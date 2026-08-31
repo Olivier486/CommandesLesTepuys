@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Commande Confirmée - Fromagerie Les Tepuys{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow border-0 rounded-3 text-center p-4">
+            <div class="card-body">
+                <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                <h1 class="fw-bold text-dark mt-3">Merci ! Votre commande #{{ order.id }} est validée.</h1>
+                <p class="text-muted fs-5">Elle a été enregistrée avec succès et transmise à l'équipe de la <strong>Fromagerie Les Tepuys</strong> pour préparation.</p>
+
+                <div class="alert alert-light border text-start my-4 p-4 shadow-sm">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-info-circle text-primary me-2"></i>Détails de la commande</h5>
+                    <div class="row g-2 mb-3">
+                        <div class="col-sm-6">
+                            <strong>Date :</strong> {{ order.created_at.strftime('%d/%m/%Y à %H:%M') }}
+                        </div>
+                        <div class="col-sm-6">
+                            <strong>Statut paiement :</strong>
+                            {% if order.payment_status == 'Payé' %}
+                                <span class="badge bg-success"><i class="bi bi-check-lg"></i> {{ order.payment_status }}</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark"><i class="bi bi-clock-history"></i> {{ order.payment_status }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-6">
+                            <strong>Mode de paiement :</strong> {{ order.payment_method }}
+                        </div>
+                        <div class="col-sm-6">
+                            <strong>Montant total :</strong> <span class="text-success fw-bold">{{ "%.2f"|format(order.total_price) }} €</span>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-dark mt-3 mb-2">Fichier récapitulatif généré :</h6>
+                    <pre class="bg-dark text-light p-3 rounded small" style="max-height: 200px; overflow-y: auto;">{{ order.recap_file }}</pre>
+                </div>
+
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{{ url_for('products') }}" class="btn btn-tepuys fw-bold">
+                        <i class="bi bi-bag-plus me-1"></i> Retour à la boutique
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

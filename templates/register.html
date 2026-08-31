@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Inscription - Fromagerie Les Tepuys{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+        <div class="card shadow border-0 rounded-3">
+            <div class="card-header text-white text-center py-3" style="background-color: var(--header-bg);">
+                <h3 class="mb-0 fw-bold"><i class="bi bi-person-plus-fill text-warning me-2"></i>Créer un compte Client</h3>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('register') }}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="nom" class="form-label fw-bold">Nom *</label>
+                            <input type="text" class="form-control" id="nom" name="nom" required placeholder="ex: Dupont">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="prenom" class="form-label fw-bold">Prénom *</label>
+                            <input type="text" class="form-control" id="prenom" name="prenom" required placeholder="ex: Jean">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="email" class="form-label fw-bold">Adresse Mail *</label>
+                            <input type="email" class="form-control" id="email" name="email" required placeholder="jean.dupont@example.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="telephone" class="form-label fw-bold">Téléphone *</label>
+                            <input type="tel" class="form-control" id="telephone" name="telephone" required placeholder="06 12 34 56 78">
+                        </div>
+
+                        <div class="col-12">
+                            <label for="adresse" class="form-label fw-bold">Adresse *</label>
+                            <input type="text" class="form-control" id="adresse" name="adresse" required placeholder="123 Rue de la République">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="code_postal" class="form-label fw-bold">Code Postal *</label>
+                            <input type="text" class="form-control" id="code_postal" name="code_postal" required placeholder="75001">
+                        </div>
+                        <div class="col-md-8">
+                            <label for="ville" class="form-label fw-bold">Ville *</label>
+                            <input type="text" class="form-control" id="ville" name="ville" required placeholder="Paris">
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="col-md-6">
+                            <label for="username" class="form-label fw-bold">Nom d'utilisateur (Identifiant) *</label>
+                            <input type="text" class="form-control" id="username" name="username" required placeholder="ex: jdupont">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="password" class="form-label fw-bold">Mot de passe *</label>
+                            <input type="password" class="form-control" id="password" name="password" required placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-grid">
+                        <button type="submit" class="btn btn-tepuys btn-lg fw-bold"><i class="bi bi-check-circle-fill me-2"></i>S'inscrire</button>
+                    </div>
+                </form>
+                <div class="text-center mt-3">
+                    <p class="mb-0">Déjà inscrit ? <a href="{{ url_for('login') }}" class="text-primary fw-bold">Connectez-vous ici</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
