@@ -1,7 +1,8 @@
 import json
 import os
-from models import db, Client, Category, Product
+from models import db, Client, Category, Product, Order, OrderItem
 from flask import Flask
+from datetime import datetime
 
 def init_db(app):
     db.init_app(app)
@@ -22,7 +23,6 @@ def init_db(app):
             db.session.commit()
 
             # Sub-categories for Fromages
-            # Frais, Pâtes molles, Pâtes dures, Pâtes Pressées non cuites, Pâtes Pressées cuites, A pâtes fondues, Chèvres et brebis, Persillés
             cheese_subcats = [
                 ("Frais", "frais"),
                 ("Pâtes molles", "pates-molles"),
@@ -40,7 +40,7 @@ def init_db(app):
 
             db.session.commit()
 
-            # Seed sample cheese products for testing (user can load full inventory later)
+            # Seed sample cheese products for testing
             frais_cat = Category.query.filter_by(slug="frais").first()
             pates_molles_cat = Category.query.filter_by(slug="pates-molles").first()
             pates_pressees_non_cuites = Category.query.filter_by(slug="pates-pressees-non-cuites").first()
@@ -109,6 +109,121 @@ def init_db(app):
             db.session.add(admin_user)
             db.session.commit()
             print("Admin user created.")
+
+        # Seed sample demo clients & orders if none exist
+        if Order.query.count() == 0:
+            print("Seeding sample demo orders...")
+            client1 = Client.query.filter_by(email="alice.martin@example.com").first()
+            if not client1:
+                client1 = Client(
+                    nom="Martin", prenom="Alice", email="alice.martin@example.com",
+                    telephone="0611223344", adresse="12 Rue des Fromages", code_postal="75002",
+                    ville="Paris", username="amartin"
+                )
+                client1.set_password("password123")
+                db.session.add(client1)
+
+            client2 = Client.query.filter_by(email="jean.dupont@example.com").first()
+            if not client2:
+                client2 = Client(
+                    nom="Dupont", prenom="Jean", email="jean.dupont@example.com",
+                    telephone="0612345678", adresse="45 Avenue de la République", code_postal="69002",
+                    ville="Lyon", username="jdupont"
+                )
+                client2.set_password("password123")
+                db.session.add(client2)
+
+            client3 = Client.query.filter_by(email="michel.chausson@gmail.com").first()
+            if not client3:
+                client3 = Client(
+                    nom="CHAUSSON", prenom="Michel", email="michel.chausson@gmail.com",
+                    telephone="0612345678", adresse="8 Boulevard Haussmann", code_postal="75009",
+                    ville="Paris", username="mchausson"
+                )
+                client3.set_password("password123")
+                db.session.add(client3)
+
+            db.session.commit()
+
+            camembert = Product.query.filter_by(name="Camembert de Normandie AOP").first()
+            brie = Product.query.filter_by(name="Brie de Meaux AOP").first()
+            beaufort = Product.query.filter_by(name="Beaufort d'été AOP").first()
+            crottin = Product.query.filter_by(name="Crottin de Chavignol AOP").first()
+            comte = Product.query.filter_by(name="Comté AOP 18 mois").first()
+
+            demo_orders = [
+                {
+                    "client": client1,
+                    "method": "Virement bancaire / PayPal",
+                    "status": "Payé",
+                    "items": [(camembert, 1)] if camembert else []
+                },
+                {
+                    "client": client1,
+                    "method": "Paiement à la livraison",
+                    "status": "En attente de paiement à la livraison",
+                    "items": [(camembert, 1)] if camembert else []
+                },
+                {
+                    "client": client2,
+                    "method": "Paiement à la livraison",
+                    "status": "En attente de paiement à la livraison",
+                    "items": [(camembert, 1), (beaufort, 1)] if camembert and beaufort else []
+                },
+                {
+                    "client": client1,
+                    "method": "Virement bancaire / PayPal",
+                    "status": "Payé",
+                    "items": [(camembert, 1)] if camembert else []
+                },
+                {
+                    "client": client1,
+                    "method": "Paiement à la livraison",
+                    "status": "En attente de paiement à la livraison",
+                    "items": [(camembert, 1)] if camembert else []
+                },
+                {
+                    "client": client2,
+                    "method": "Paiement à la livraison",
+                    "status": "En attente de paiement à la livraison",
+                    "items": [(camembert, 1), (beaufort, 1)] if camembert and beaufort else []
+                },
+                {
+                    "client": client3,
+                    "method": "Paiement à la livraison",
+                    "status": "En attente de paiement à la livraison",
+                    "items": [(camembert, 1), (brie, 1), (beaufort, 1), (crottin, 3)] if camembert and brie and beaufort and crottin else []
+                }
+            ]
+
+            for ord_info in demo_orders:
+                c = ord_info["client"]
+                if not ord_info["items"]:
+                    continue
+                total = sum(p.price * q for p, q in ord_info["items"])
+                recap = f"Commande pour {c.prenom} {c.nom}\nMode de paiement: {ord_info['method']}\nTotal: {total:.2f} €"
+                order = Order(
+                    client_id=c.id,
+                    total_price=total,
+                    payment_method=ord_info["method"],
+                    payment_status=ord_info["status"],
+                    recap_file=recap
+                )
+                db.session.add(order)
+                db.session.commit()
+
+                for p, q in ord_info["items"]:
+                    item = OrderItem(
+                        order_id=order.id,
+                        product_id=p.id,
+                        product_name=p.name,
+                        unit_price=p.price,
+                        quantity=q
+                    )
+                    db.session.add(item)
+                db.session.commit()
+
+            print("Sample demo orders seeded.")
 
 if __name__ == "__main__":
     app = Flask(__name__)
