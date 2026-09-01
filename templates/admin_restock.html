@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Produits à Réapprovisionner - Fromagerie Les Tepuys{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="fw-bold text-dark mb-1"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Produits à Réapprovisionner</h1>
+        <p class="text-muted mb-0">Alerte de stock épuisé ou critique (stock &le; 5 unités).</p>
+    </div>
+</div>
+
+<!-- Admin Navigation Tabs -->
+<ul class="nav nav-tabs mb-4 fw-bold">
+    <li class="nav-item">
+        <a class="nav-link text-dark" href="{{ url_for('admin_orders') }}">
+            <i class="bi bi-receipt me-1"></i> Commandes
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark" href="{{ url_for('admin_products') }}">
+            <i class="bi bi-box-seam me-1"></i> Gestion des Produits
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link active text-danger bg-light border-danger fw-bold position-relative" href="{{ url_for('admin_restock') }}">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i> À Réapprovisionner
+            {% if products|length > 0 %}
+            <span class="badge rounded-pill bg-danger ms-1">{{ products|length }}</span>
+            {% endif %}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark" href="{{ url_for('admin_payments') }}">
+            <i class="bi bi-currency-euro me-1"></i> Suivi des Paiements
+        </a>
+    </li>
+</ul>
+
+{% if products %}
+<div class="alert alert-warning border-warning d-flex align-items-center mb-4 shadow-sm" role="alert">
+    <i class="bi bi-bell-fill fs-2 me-3 text-warning"></i>
+    <div>
+        <h5 class="alert-heading fw-bold mb-1">Attention, {{ products|length }} produit(s) nécessitent un réapprovisionnement !</h5>
+        <p class="mb-0 small">Mettez à jour le stock directement ci-dessous une fois votre réapprovisionnement effectué auprès de vos fournisseurs.</p>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 rounded-3">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Catégorie</th>
+                        <th scope="col">Nom du Produit</th>
+                        <th scope="col">Prix actuel</th>
+                        <th scope="col">Stock actuel</th>
+                        <th scope="col" style="width: 200px;">Nouveau Stock</th>
+                        <th scope="col" class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr class="{% if product.stock <= 0 %}table-danger{% else %}table-warning{% endif %}">
+                        <td class="fw-bold">#{{ product.id }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ product.category.name }}</span></td>
+                        <td class="fw-bold text-dark">{{ product.name }}</td>
+                        <td class="fw-bold text-success">{{ "%.2f"|format(product.price) }} €</td>
+                        <td>
+                            {% if product.stock <= 0 %}
+                                <span class="badge bg-danger fs-6"><i class="bi bi-x-circle me-1"></i>ÉPUISÉ (0)</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark fs-6"><i class="bi bi-exclamation-triangle me-1"></i>CRITIQUE ({{ product.stock }})</span>
+                            {% endif %}
+                        </td>
+                        <form action="{{ url_for('update_product_stock', product_id=product.id) }}" method="POST">
+                            <input type="hidden" name="price" value="{{ product.price }}">
+                            <td>
+                                <input type="number" min="1" name="stock" value="{{ product.stock + 20 }}" class="form-control form-control-sm text-center fw-bold">
+                            </td>
+                            <td class="text-end pe-4">
+                                <button type="submit" class="btn btn-sm btn-success fw-bold shadow-sm">
+                                    <i class="bi bi-plus-circle me-1"></i> Réapprovisionner
+                                </button>
+                            </td>
+                        </form>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-success py-4 text-center my-4 shadow-sm">
+    <i class="bi bi-check-circle-fill fs-1 text-success d-block mb-2"></i>
+    <h4 class="fw-bold">Tous vos stocks sont au niveau optimal !</h4>
+    <p class="mb-0">Aucun produit ne nécessite de réapprovisionnement pour le moment.</p>
+</div>
+{% endif %}
+{% endblock %}

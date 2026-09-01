@@ -3,15 +3,42 @@
 {% block title %}Espace Fromagerie - Gestion des Commandes{% endblock %}
 
 {% block content %}
-<div class="row mb-4 align-items-center">
-    <div class="col-md-8">
-        <h1 class="fw-bold text-dark"><i class="bi bi-shield-lock-fill text-warning me-2"></i>Espace Fromagerie Les Tepuys</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="fw-bold text-dark mb-1"><i class="bi bi-shield-lock-fill text-warning me-2"></i>Espace Fromagerie Les Tepuys</h1>
         <p class="text-muted mb-0">Gestion et préparation des commandes clients en direct.</p>
     </div>
-    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+    <div>
         <span class="badge bg-dark fs-6 px-3 py-2"><i class="bi bi-box-seam me-1"></i> {{ orders|length }} Commande(s) au total</span>
     </div>
 </div>
+
+<!-- Admin Navigation Tabs -->
+<ul class="nav nav-tabs mb-4 fw-bold">
+    <li class="nav-item">
+        <a class="nav-link active text-warning bg-dark" href="{{ url_for('admin_orders') }}">
+            <i class="bi bi-receipt me-1"></i> Commandes
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark" href="{{ url_for('admin_products') }}">
+            <i class="bi bi-box-seam me-1"></i> Gestion des Produits
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark position-relative" href="{{ url_for('admin_restock') }}">
+            <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i> À Réapprovisionner
+            {% if low_stock_count > 0 %}
+            <span class="badge rounded-pill bg-danger ms-1">{{ low_stock_count }}</span>
+            {% endif %}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark" href="{{ url_for('admin_payments') }}">
+            <i class="bi bi-currency-euro me-1"></i> Suivi des Paiements
+        </a>
+    </li>
+</ul>
 
 <div class="card shadow border-0 rounded-3">
     <div class="card-header text-white py-3" style="background-color: var(--header-bg);">
@@ -30,7 +57,7 @@
                         <th scope="col">Montant Total</th>
                         <th scope="col">Mode de Paiement</th>
                         <th scope="col">État de Paiement</th>
-                        <th scope="col" class="text-center pe-4">Préparation</th>
+                        <th scope="col" class="text-center pe-4">Actions & Préparation</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -44,18 +71,56 @@
                         </td>
                         <td class="small">{{ order.client.telephone }}</td>
                         <td class="fw-bold text-success">{{ "%.2f"|format(order.total_price) }} €</td>
-                        <td class="small">{{ order.payment_method }}</td>
+                        <td class="small fw-bold">{{ order.payment_method }}</td>
                         <td>
                             {% if order.payment_status == 'Payé' %}
-                                <span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i> {{ order.payment_status }}</span>
-                            {% else %}
-                                <span class="badge bg-warning text-dark d-block mb-1" style="width: fit-content;"><i class="bi bi-clock-fill me-1"></i> {{ order.payment_status }}</span>
+                                <span class="badge bg-success mb-2 d-inline-block"><i class="bi bi-check-circle-fill me-1"></i> {{ order.payment_status }}</span>
+                                <br>
+                                <!-- Evol 7: Revert status to unpaid in case of error -->
                                 <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="POST" class="d-inline">
-                                    <input type="hidden" name="payment_status" value="Payé">
-                                    <button type="submit" class="btn btn-sm btn-outline-success py-0 px-2 fw-bold" style="font-size: 0.75rem;" title="Changer le statut en Payé">
-                                        <i class="bi bi-check2-circle me-1"></i> Marquer comme Payé
+                                    <input type="hidden" name="payment_status" value="En attente de paiement">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2 small" style="font-size: 0.75rem;" title="Erreur ? Annuler le statut payé">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i> Marquer comme Non Payé
                                     </button>
                                 </form>
+                            {% else %}
+                                <span class="badge bg-warning text-dark d-block mb-2" style="width: fit-content;"><i class="bi bi-clock-fill me-1"></i> {{ order.payment_status }}</span>
+
+                                <!-- Evol 6: Confirm payment with specific payment method choice -->
+                                <button type="button" class="btn btn-sm btn-outline-success py-1 px-2 fw-bold" style="font-size: 0.8rem;" data-bs-toggle="modal" data-bs-target="#payModal{{ order.id }}">
+                                    <i class="bi bi-credit-card me-1"></i> Valider Paiement
+                                </button>
+
+                                <!-- Payment Confirmation Modal -->
+                                <div class="modal fade text-start fw-normal" id="payModal{{ order.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="POST">
+                                                <input type="hidden" name="payment_status" value="Payé">
+                                                <div class="modal-header bg-success text-white">
+                                                    <h5 class="modal-title fw-bold"><i class="bi bi-check-circle-fill me-2"></i>Valider le Paiement de la Commande #{{ order.id }}</h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p class="mb-3">Sélectionnez le mode de paiement utilisé par le client <strong>{{ order.client.prenom }} {{ order.client.nom }}</strong> (Montant: <strong>{{ "%.2f"|format(order.total_price) }} €</strong>) :</p>
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-bold">Mode de paiement :</label>
+                                                        <select name="payment_method" class="form-select fw-bold" required>
+                                                            <option value="Carte bancaire" selected>Carte bancaire (CB)</option>
+                                                            <option value="Espèces">Espèces</option>
+                                                            <option value="Chèque">Chèque</option>
+                                                            <option value="Virement bancaire">Virement bancaire</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                    <button type="submit" class="btn btn-success fw-bold"><i class="bi bi-check-lg me-1"></i> Confirmer le Paiement</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             {% endif %}
                         </td>
                         <td class="text-center pe-4">
@@ -131,12 +196,9 @@
                                         <div class="modal-footer justify-content-between">
                                             <div>
                                                 {% if order.payment_status != 'Payé' %}
-                                                <form action="{{ url_for('update_order_status', order_id=order.id) }}" method="POST" class="d-inline">
-                                                    <input type="hidden" name="payment_status" value="Payé">
-                                                    <button type="submit" class="btn btn-outline-success fw-bold">
-                                                        <i class="bi bi-check-circle-fill me-1"></i> Marquer cette commande comme Payée
-                                                    </button>
-                                                </form>
+                                                <button type="button" class="btn btn-outline-success fw-bold" data-bs-toggle="modal" data-bs-target="#payModal{{ order.id }}">
+                                                    <i class="bi bi-check-circle-fill me-1"></i> Valider le paiement
+                                                </button>
                                                 {% endif %}
                                             </div>
                                             <div>

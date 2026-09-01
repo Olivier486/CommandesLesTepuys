@@ -49,19 +49,19 @@ def init_db(app):
             persilles_cat = Category.query.filter_by(slug="persilles").first()
 
             cheese_samples = [
-                (frais_cat.id, "Faisselle artisanale", 3.20, "Faisselle fraîche au lait cru"),
-                (pates_molles_cat.id, "Camembert de Normandie AOP", 6.80, "Camembert au lait cru moulé à la louche"),
-                (pates_molles_cat.id, "Brie de Meaux AOP", 7.50, "Brie de Meaux au lait cru"),
-                (pates_pressees_non_cuites.id, "Reblochon de Savoie AOP", 8.20, "Reblochon fermier au lait cru"),
-                (pates_pressees_cuites.id, "Comté AOP 18 mois", 9.50, "Comté affiné 18 mois d'alpage"),
-                (pates_pressees_cuites.id, "Beaufort d'été AOP", 11.00, "Beaufort fabriqué en alpage"),
-                (chevres_cat.id, "Crottin de Chavignol AOP", 3.80, "Fromage de chèvre affiné"),
-                (persilles_cat.id, "Roquefort AOP", 7.90, "Roquefort de tradition")
+                (frais_cat.id, "Faisselle artisanale", 3.20, 20, "Faisselle fraîche au lait cru"),
+                (pates_molles_cat.id, "Camembert de Normandie AOP", 6.80, 15, "Camembert au lait cru moulé à la louche"),
+                (pates_molles_cat.id, "Brie de Meaux AOP", 7.50, 10, "Brie de Meaux au lait cru"),
+                (pates_pressees_non_cuites.id, "Reblochon de Savoie AOP", 8.20, 12, "Reblochon fermier au lait cru"),
+                (pates_pressees_cuites.id, "Comté AOP 18 mois", 9.50, 25, "Comté affiné 18 mois d'alpage"),
+                (pates_pressees_cuites.id, "Beaufort d'été AOP", 11.00, 8, "Beaufort fabriqué en alpage"),
+                (chevres_cat.id, "Crottin de Chavignol AOP", 3.80, 18, "Fromage de chèvre affiné"),
+                (persilles_cat.id, "Roquefort AOP", 7.90, 14, "Roquefort de tradition")
             ]
 
-            for cat_id, p_name, p_price, p_desc in cheese_samples:
+            for cat_id, p_name, p_price, p_stock, p_desc in cheese_samples:
                 if cat_id:
-                    db.session.add(Product(category_id=cat_id, name=p_name, price=p_price, description=p_desc))
+                    db.session.add(Product(category_id=cat_id, name=p_name, price=p_price, stock=p_stock, description=p_desc))
 
             db.session.commit()
 

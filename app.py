@@ -1,11 +1,13 @@
 import os
 import json
 import smtplib
+import csv
+from io import StringIO
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from functools import wraps
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
 from models import db, Client, Category, Product, Order, OrderItem
 from seed import init_db
 
@@ -103,15 +105,19 @@ def inject_global_data():
     cart_count = sum(item['quantity'] for item in cart.values())
 
     current_user = None
+    low_stock_count = 0
     if 'client_id' in session:
         current_user = Client.query.get(session['client_id'])
+        if current_user and current_user.is_admin:
+            low_stock_count = Product.query.filter(Product.stock <= 5).count()
 
     return dict(
         main_categories=main_categories,
         cheese_subcategories=cheese_subcategories,
         cart=cart,
         cart_count=cart_count,
-        current_user=current_user
+        current_user=current_user,
+        low_stock_count=low_stock_count
     )
 
 @app.route('/')
@@ -157,7 +163,10 @@ def products():
 @app.route('/cart/add', methods=['POST'])
 def add_to_cart():
     product_id = str(request.form.get('product_id'))
-    quantity = int(request.form.get('quantity', 1))
+    try:
+        quantity = int(request.form.get('quantity', 1))
+    except ValueError:
+        quantity = 1
 
     if quantity < 1:
         quantity = 1
@@ -167,7 +176,16 @@ def add_to_cart():
         flash("Produit introuvable.", "danger")
         return redirect(url_for('products'))
 
+    if product.stock <= 0:
+        flash(f"Le produit '{product.name}' est actuellement épuisé / en rupture de stock.", "warning")
+        return redirect(request.referrer or url_for('products'))
+
     cart = session.get('cart', {})
+    current_in_cart = cart.get(product_id, {}).get('quantity', 0)
+    if current_in_cart + quantity > product.stock:
+        flash(f"Désolé, la quantité désirée pour '{product.name}' n'est pas disponible ({product.stock} restant(s) en stock).", "warning")
+        return redirect(request.referrer or url_for('products'))
+
     if product_id in cart:
         cart[product_id]['quantity'] += quantity
     else:
@@ -223,6 +241,10 @@ def update_cart():
             del cart[product_id]
             flash("Produit retiré du panier.", "info")
         else:
+            product = Product.query.get(int(product_id))
+            if product and quantity > product.stock:
+                flash(f"Désolé, la quantité désirée pour '{product.name}' n'est pas disponible ({product.stock} disponible(s)).", "warning")
+                return redirect(url_for('view_cart'))
             cart[product_id]['quantity'] = quantity
             flash("Panier mis à jour.", "success")
 
@@ -278,6 +300,14 @@ def checkout():
         })
 
     if request.method == 'POST':
+        # Check stock for all cart items before proceeding
+        for item in cart_items:
+            product_obj = Product.query.get(item['id'])
+            if not product_obj or product_obj.stock < item['quantity']:
+                avail = product_obj.stock if product_obj else 0
+                flash(f"La quantité désirée pour '{item['name']}' n'est pas disponible ({avail} en stock). Veuillez ajuster votre panier.", "danger")
+                return redirect(url_for('view_cart'))
+
         payment_choice = request.form.get('payment_method', 'virement')
         if payment_choice == 'livraison':
             payment_method = "Paiement à la livraison"
@@ -329,6 +359,11 @@ def checkout():
             )
             db.session.add(order_item)
 
+            # Deduct stock
+            prod = Product.query.get(item['id'])
+            if prod:
+                prod.stock = max(0, prod.stock - item['quantity'])
+
         db.session.commit()
 
         # Send confirmation email
@@ -364,10 +399,129 @@ def admin_orders():
 def update_order_status(order_id):
     order = Order.query.get_or_404(order_id)
     new_status = request.form.get('payment_status', 'Payé').strip()
+    new_method = request.form.get('payment_method', '').strip()
+
     order.payment_status = new_status
+    if new_method:
+        order.payment_method = new_method
+
     db.session.commit()
-    flash(f"Le statut de la commande #{order.id} a été mis à jour avec succès : '{new_status}'.", "success")
-    return redirect(url_for('admin_orders'))
+    flash(f"Le statut de la commande #{order.id} a été mis à jour : '{new_status}' ({order.payment_method}).", "success")
+    return redirect(request.referrer or url_for('admin_orders'))
+
+@app.route('/admin/payments')
+@admin_required
+def admin_payments():
+    start_date_str = request.args.get('start_date', '').strip()
+    end_date_str = request.args.get('end_date', '').strip()
+
+    query = Order.query.filter(Order.payment_status == 'Payé')
+
+    if start_date_str:
+        try:
+            start_dt = datetime.strptime(start_date_str, '%Y-%m-%d')
+            query = query.filter(Order.created_at >= start_dt)
+        except ValueError:
+            pass
+
+    if end_date_str:
+        try:
+            end_dt = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+            query = query.filter(Order.created_at <= end_dt)
+        except ValueError:
+            pass
+
+    paid_orders = query.order_by(Order.created_at.desc()).all()
+    total_paid_amount = sum(o.total_price for o in paid_orders)
+
+    return render_template(
+        'admin_payments.html',
+        orders=paid_orders,
+        total_paid_amount=total_paid_amount,
+        start_date=start_date_str,
+        end_date=end_date_str
+    )
+
+@app.route('/admin/payments/export')
+@admin_required
+def export_payments_csv():
+    start_date_str = request.args.get('start_date', '').strip()
+    end_date_str = request.args.get('end_date', '').strip()
+
+    query = Order.query.filter(Order.payment_status == 'Payé')
+
+    if start_date_str:
+        try:
+            start_dt = datetime.strptime(start_date_str, '%Y-%m-%d')
+            query = query.filter(Order.created_at >= start_dt)
+        except ValueError:
+            pass
+
+    if end_date_str:
+        try:
+            end_dt = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+            query = query.filter(Order.created_at <= end_dt)
+        except ValueError:
+            pass
+
+    paid_orders = query.order_by(Order.created_at.desc()).all()
+
+    si = StringIO()
+    cw = csv.writer(si, delimiter=';')
+    cw.writerow(['Numéro Commande', 'Date', 'Nom Client', 'Prénom Client', 'Email', 'Téléphone', 'Montant Payé (€)', 'Mode de Paiement'])
+
+    for order in paid_orders:
+        cw.writerow([
+            order.id,
+            order.created_at.strftime('%d/%m/%Y %H:%M'),
+            order.client.nom,
+            order.client.prenom,
+            order.client.email,
+            order.client.telephone,
+            f"{order.total_price:.2f}",
+            order.payment_method
+        ])
+
+    output = si.getvalue().encode('utf-8-sig')
+    filename = f"export_paiements_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment;filename={filename}"}
+    )
+
+@app.route('/admin/products')
+@admin_required
+def admin_products():
+    categories = Category.query.all()
+    products_list = Product.query.order_by(Product.name.asc()).all()
+    return render_template('admin_products.html', products=products_list, categories=categories)
+
+@app.route('/admin/products/<int:product_id>/update', methods=['POST'])
+@admin_required
+def update_product_stock(product_id):
+    product = Product.query.get_or_404(product_id)
+    try:
+        new_price = float(request.form.get('price', product.price))
+        new_stock = int(request.form.get('stock', product.stock))
+        if new_price >= 0 and new_stock >= 0:
+            product.price = new_price
+            product.stock = new_stock
+            db.session.commit()
+            flash(f"Produit '{product.name}' mis à jour : Prix = {new_price:.2f}€, Stock = {new_stock} unités.", "success")
+        else:
+            flash("Le prix et le stock doivent être des valeurs positives.", "danger")
+    except ValueError:
+        flash("Valeurs invalides transmises.", "danger")
+
+    return redirect(request.referrer or url_for('admin_products'))
+
+@app.route('/admin/restock')
+@admin_required
+def admin_restock():
+    low_stock_products = Product.query.filter(Product.stock <= 5).order_by(Product.stock.asc()).all()
+    return render_template('admin_restock.html', products=low_stock_products)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():

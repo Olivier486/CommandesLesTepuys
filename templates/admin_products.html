@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des Produits & Stocks - Fromagerie Les Tepuys{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="fw-bold text-dark mb-1"><i class="bi bi-boxes text-warning me-2"></i>Espace Boutique — Fromagerie Les Tepuys</h1>
+        <p class="text-muted mb-0">Gestion de l'inventaire, modification des prix et réapprovisionnement des stocks.</p>
+    </div>
+</div>
+
+<!-- Admin Navigation Tabs -->
+<ul class="nav nav-tabs mb-4 fw-bold">
+    <li class="nav-item">
+        <a class="nav-link text-dark" href="{{ url_for('admin_orders') }}">
+            <i class="bi bi-receipt me-1"></i> Commandes
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link active text-warning bg-dark" href="{{ url_for('admin_products') }}">
+            <i class="bi bi-box-seam me-1"></i> Gestion des Produits
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark position-relative" href="{{ url_for('admin_restock') }}">
+            <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i> À Réapprovisionner
+            {% if low_stock_count > 0 %}
+            <span class="badge rounded-pill bg-danger ms-1">{{ low_stock_count }}</span>
+            {% endif %}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark" href="{{ url_for('admin_payments') }}">
+            <i class="bi bi-currency-euro me-1"></i> Suivi des Paiements
+        </a>
+    </li>
+</ul>
+
+<div class="card shadow-sm border-0 rounded-3">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-list-stars me-2"></i>Liste de tous les produits ({{ products|length }})</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Catégorie</th>
+                        <th scope="col">Nom du Produit</th>
+                        <th scope="col" style="width: 140px;">Prix (€)</th>
+                        <th scope="col" style="width: 150px;">Stock Disponible</th>
+                        <th scope="col">État Stock</th>
+                        <th scope="col" class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td class="fw-bold">#{{ product.id }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ product.category.name }}</span></td>
+                        <td class="fw-bold text-dark">{{ product.name }}</td>
+                        <form action="{{ url_for('update_product_stock', product_id=product.id) }}" method="POST">
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" step="0.01" min="0" name="price" value="{{ '%.2f'|format(product.price) }}" class="form-control fw-bold">
+                                    <span class="input-group-text">€</span>
+                                </div>
+                            </td>
+                            <td>
+                                <input type="number" min="0" name="stock" value="{{ product.stock }}" class="form-control form-control-sm text-center fw-bold">
+                            </td>
+                            <td>
+                                {% if product.stock <= 0 %}
+                                    <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rupture (0)</span>
+                                {% elif product.stock <= 5 %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i>Faible ({{ product.stock }})</span>
+                                {% else %}
+                                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>En stock ({{ product.stock }})</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <button type="submit" class="btn btn-sm btn-primary fw-bold">
+                                    <i class="bi bi-save me-1"></i> Enregistrer
+                                </button>
+                            </td>
+                        </form>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

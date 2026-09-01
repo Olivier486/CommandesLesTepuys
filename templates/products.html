@@ -85,6 +85,15 @@
                     <span class="badge bg-light text-dark border">{{ product.category.name }}</span>
                     <span class="fs-5 fw-bold text-success">{{ "%.2f"|format(product.price) }} €</span>
                 </div>
+                <div class="mb-2">
+                    {% if product.stock <= 0 %}
+                        <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rupture de stock</span>
+                    {% elif product.stock <= 5 %}
+                        <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i>Plus que {{ product.stock }} en stock</span>
+                    {% else %}
+                        <span class="badge bg-light text-secondary border"><i class="bi bi-box-seam me-1"></i>Stock: {{ product.stock }}</span>
+                    {% endif %}
+                </div>
                 <h5 class="card-title fw-bold text-dark">{{ product.name }}</h5>
                 <p class="card-text text-muted small flex-grow-1">
                     {{ product.description if product.description else "Produit de qualité sélectionné par la Fromagerie Les Tepuys." }}
@@ -99,16 +108,24 @@
                     </button>
                 </form>
                 {% else %}
+                {% if product.stock > 0 %}
                 <form action="{{ url_for('add_to_cart') }}" method="POST" class="mt-3">
                     <input type="hidden" name="product_id" value="{{ product.id }}">
                     <div class="input-group">
                         <span class="input-group-text bg-white">Qté</span>
-                        <input type="number" name="quantity" value="1" min="1" max="50" class="form-control text-center" style="max-width: 70px;">
+                        <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" class="form-control text-center" style="max-width: 70px;">
                         <button type="submit" class="btn btn-tepuys fw-bold flex-grow-1">
                             <i class="bi bi-cart-plus me-1"></i> Ajouter
                         </button>
                     </div>
                 </form>
+                {% else %}
+                <div class="mt-3">
+                    <button class="btn btn-secondary fw-bold w-100" disabled>
+                        <i class="bi bi-x-circle me-1"></i> Produit indisponible
+                    </button>
+                </div>
+                {% endif %}
                 {% endif %}
             </div>
         </div>
