@@ -9,6 +9,18 @@ def init_db(app):
     with app.app_context():
         db.create_all()
 
+        # Auto-migrate missing columns for existing SQLite database files
+        try:
+            db.session.execute(db.text("SELECT stock FROM products LIMIT 1"))
+        except Exception:
+            db.session.rollback()
+            try:
+                db.session.execute(db.text("ALTER TABLE products ADD COLUMN stock INTEGER NOT NULL DEFAULT 50"))
+                db.session.commit()
+                print("Migration automatique : colonne 'stock' ajoutée à la table 'products'.")
+            except Exception as e:
+                print(f"Notice migration : {e}")
+
         # Check if categories exist
         if Category.query.count() == 0:
             print("Seeding categories...")
