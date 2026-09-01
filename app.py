@@ -109,6 +109,7 @@ def inject_global_data():
     return dict(
         main_categories=main_categories,
         cheese_subcategories=cheese_subcategories,
+        cart=cart,
         cart_count=cart_count,
         current_user=current_user
     )
@@ -241,7 +242,7 @@ def remove_from_cart(product_id):
         session.modified = True
         flash(f"'{removed_name}' a été retiré de votre panier.", "info")
 
-    return redirect(url_for('view_cart'))
+    return redirect(request.referrer or url_for('view_cart'))
 
 @app.route('/cart/clear', methods=['POST'])
 def clear_cart():
