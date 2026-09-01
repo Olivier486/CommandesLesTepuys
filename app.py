@@ -283,7 +283,7 @@ def checkout():
             payment_method = "Paiement à la livraison"
             payment_status = "En attente de paiement à la livraison"
         else:
-            payment_method = "Virement bancaire / PayPal"
+            payment_method = "Virement bancaire"
             payment_status = "Payé"
 
         now_str = datetime.now().strftime('%d/%m/%Y %H:%M:%S')

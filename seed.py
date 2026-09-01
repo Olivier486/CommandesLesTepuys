@@ -27,8 +27,8 @@ def init_db(app):
                 ("Frais", "frais"),
                 ("Pâtes molles", "pates-molles"),
                 ("Pâtes dures", "pates-dures"),
-                ("Pâtes Pressées non cuites", "pates-pressees-non-cuites"),
-                ("Pâtes Pressées cuites", "pates-pressees-cuites"),
+                ("Pâtes pressées non cuites", "pates-pressees-non-cuites"),
+                ("Pâtes pressées cuites", "pates-pressees-cuites"),
                 ("A pâtes fondues", "a-pates-fondues"),
                 ("Chèvres et brebis", "chevres-et-brebis"),
                 ("Persillés", "persilles")
@@ -154,7 +154,7 @@ def init_db(app):
             demo_orders = [
                 {
                     "client": client1,
-                    "method": "Virement bancaire / PayPal",
+                    "method": "Virement bancaire",
                     "status": "Payé",
                     "items": [(camembert, 1)] if camembert else []
                 },
@@ -172,7 +172,7 @@ def init_db(app):
                 },
                 {
                     "client": client1,
-                    "method": "Virement bancaire / PayPal",
+                    "method": "Virement bancaire",
                     "status": "Payé",
                     "items": [(camembert, 1)] if camembert else []
                 },

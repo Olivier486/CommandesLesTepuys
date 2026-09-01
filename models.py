@@ -53,7 +53,7 @@ class Order(db.Model):
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     total_price = db.Column(db.Float, nullable=False)
-    payment_method = db.Column(db.String(50), nullable=False) # 'Virement bancaire', 'PayPal', 'Paiement à la livraison'
+    payment_method = db.Column(db.String(50), nullable=False) # 'Virement bancaire', 'Paiement à la livraison'
     payment_status = db.Column(db.String(50), nullable=False) # 'Payé', 'En attente de paiement à la livraison'
     recap_file = db.Column(db.Text, nullable=False) # Stored order recap file content / summary
 
