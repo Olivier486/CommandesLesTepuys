@@ -3,9 +3,27 @@ import urllib.parse
 import http.cookiejar
 import threading
 import time
-from app import app
+from app import app, send_order_confirmation_email, Client, Order
 
 BASE_URL = "http://127.0.0.1:5000"
+
+def test_email_function():
+    with app.app_context():
+        client = Client.query.filter_by(username="amartin").first()
+        order_paid = Order.query.filter_by(payment_status="Payé").first()
+        order_delivery = Order.query.filter_by(payment_status="En attente de paiement à la livraison").first()
+
+        if client and order_paid:
+            email_paid = send_order_confirmation_email(order_paid, client)
+            assert f"Bonjour {client.prenom}," in email_paid
+            assert "déjà réglée" in email_paid or "déjà payée" in email_paid
+            print("Email test for online payment OK.")
+
+        if client and order_delivery:
+            email_del = send_order_confirmation_email(order_delivery, client)
+            assert f"Bonjour {client.prenom}," in email_del
+            assert "sera à régler" in email_del
+            print("Email test for payment on delivery OK.")
 
 def test_checkout():
     cj = http.cookiejar.CookieJar()
@@ -47,6 +65,8 @@ def test_checkout():
     print("Checkout with payment on delivery successful.")
 
 if __name__ == "__main__":
+    test_email_function()
+
     server_thread = threading.Thread(target=app.run, kwargs={'port': 5000, 'use_reloader': False})
     server_thread.daemon = True
     server_thread.start()

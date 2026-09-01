@@ -1,5 +1,8 @@
 import os
 import json
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
@@ -12,6 +15,68 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lestepuys.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 init_db(app)
+
+def send_order_confirmation_email(order, client):
+    subject = f"Confirmation de votre commande #{order.id} - Fromagerie Les Tepuys"
+
+    if order.payment_status == 'Payé':
+        payment_info = "Votre commande est déjà réglée (Paiement en ligne effectué)."
+    else:
+        payment_info = "Votre commande sera à régler lorsque vous viendrez récupérer votre commande."
+
+    items_summary = "\n".join([
+        f"  - {item.product_name} x{item.quantity} ({item.unit_price * item.quantity:.2f} €)"
+        for item in order.items
+    ])
+
+    body = f"""Bonjour {client.prenom},
+
+Nous vous remercions pour votre commande n°#{order.id} auprès de la Fromagerie Les Tepuys !
+
+{payment_info}
+
+--- Récapitulatif de votre commande ---
+{items_summary}
+
+Total TTC : {order.total_price:.2f} €
+Mode de paiement : {order.payment_method}
+Statut du paiement : {order.payment_status}
+
+Coordonnées :
+{client.prenom} {client.nom}
+{client.adresse}, {client.code_postal} {client.ville}
+Téléphone : {client.telephone}
+
+À très bientôt,
+L'équipe Fromagerie Les Tepuys
+https://www.lestepuys.com
+"""
+
+    smtp_server = os.environ.get('SMTP_SERVER')
+    smtp_port = os.environ.get('SMTP_PORT', '587')
+    smtp_user = os.environ.get('SMTP_USER')
+    smtp_password = os.environ.get('SMTP_PASSWORD')
+
+    if smtp_server and smtp_user and smtp_password:
+        try:
+            msg = MIMEMultipart()
+            msg['From'] = smtp_user
+            msg['To'] = client.email
+            msg['Subject'] = subject
+            msg.attach(MIMEText(body, 'plain', 'utf-8'))
+
+            server = smtplib.SMTP(smtp_server, int(smtp_port))
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            server.sendmail(smtp_user, client.email, msg.as_string())
+            server.quit()
+            print(f"Email de confirmation envoyé à {client.email}")
+        except Exception as e:
+            print(f"Erreur lors de l'envoi de l'email : {e}")
+    else:
+        print(f"--- [SIMULATION EMAIL] Envoyé à {client.email} ---\n{body}\n----------------------------------")
+
+    return body
 
 def admin_required(f):
     @wraps(f)
@@ -264,6 +329,9 @@ def checkout():
             db.session.add(order_item)
 
         db.session.commit()
+
+        # Send confirmation email
+        send_order_confirmation_email(order, client)
 
         session['cart'] = {}
         session.modified = True
