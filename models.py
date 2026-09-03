@@ -70,3 +70,17 @@ class OrderItem(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
 
     product = db.relationship('Product')
+
+class StripePaymentDetail(db.Model):
+    __tablename__ = 'stripe_payment_details'
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
+    stripe_payment_id = db.Column(db.String(100), nullable=False)
+    card_holder = db.Column(db.String(150), nullable=False)
+    card_brand = db.Column(db.String(50), nullable=False, default='Visa')
+    last4 = db.Column(db.String(4), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(50), nullable=False, default='succeeded')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    order = db.relationship('Order', backref=db.backref('stripe_payment', uselist=False))

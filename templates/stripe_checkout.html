@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Paiement Sécurisé CB Stripe - Fromagerie Les Tepuys{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+        <div class="card shadow border-0 rounded-3">
+            <div class="card-header text-white text-center py-3" style="background-color: var(--header-bg);">
+                <h4 class="mb-0 fw-bold"><i class="bi bi-shield-lock-fill text-warning me-2"></i>Paiement Sécurisé Stripe</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-info d-flex align-items-center mb-4">
+                    <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                    <div>
+                        <strong>Commande #{{ order.id }}</strong> — Total à régler : <span class="fw-bold text-success fs-5">{{ "%.2f"|format(order.total_price) }} €</span>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('stripe_process', order_id=order.id) }}">
+                    <div class="mb-3">
+                        <label for="card_holder" class="form-label fw-bold">Nom sur la carte</label>
+                        <input type="text" class="form-control" id="card_holder" name="card_holder" required value="{{ current_user.prenom }} {{ current_user.nom }}" placeholder="M. Jean Dupont">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="card_number" class="form-label fw-bold">Numéro de carte bancaire (CB / Visa / Mastercard)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-credit-card-2-front"></i></span>
+                            <input type="text" class="form-control" id="card_number" name="card_number" required placeholder="4242 4242 4242 4242" maxlength="19">
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <label for="card_exp" class="form-label fw-bold">Expiration (MM/AA)</label>
+                            <input type="text" class="form-control" id="card_exp" name="card_exp" required placeholder="12/28" maxlength="5">
+                        </div>
+                        <div class="col-6">
+                            <label for="card_cvc" class="form-label fw-bold">Cryptogramme (CVC)</label>
+                            <input type="password" class="form-control" id="card_cvc" name="card_cvc" required placeholder="123" maxlength="4">
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg fw-bold">
+                            <i class="bi bi-lock-fill me-2"></i>Payer {{ "%.2f"|format(order.total_price) }} € sur Stripe
+                        </button>
+                        <a href="{{ url_for('products') }}" class="btn btn-outline-secondary">Annuler</a>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center bg-light text-muted small py-2">
+                <i class="bi bi-shield-check text-success me-1"></i> Transactions chiffrées SSL / TLS directes avec le serveur de paiement Stripe de la boutique.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

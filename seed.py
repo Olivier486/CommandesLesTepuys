@@ -122,41 +122,42 @@ def init_db(app):
             db.session.commit()
             print("Admin user created.")
 
-        # Seed sample demo clients & orders if none exist
+        # Seed sample demo clients
+        client1 = Client.query.filter_by(email="alice.martin@example.com").first()
+        if not client1:
+            client1 = Client(
+                nom="Martin", prenom="Alice", email="alice.martin@example.com",
+                telephone="0611223344", adresse="12 Rue des Fromages", code_postal="75002",
+                ville="Paris", username="amartin"
+            )
+            client1.set_password("password123")
+            db.session.add(client1)
+
+        client2 = Client.query.filter_by(email="jean.dupont@example.com").first()
+        if not client2:
+            client2 = Client(
+                nom="Dupont", prenom="Jean", email="jean.dupont@example.com",
+                telephone="0612345678", adresse="45 Avenue de la République", code_postal="69002",
+                ville="Lyon", username="jdupont"
+            )
+            client2.set_password("password123")
+            db.session.add(client2)
+
+        client3 = Client.query.filter_by(email="michel.chausson@gmail.com").first()
+        if not client3:
+            client3 = Client(
+                nom="CHAUSSON", prenom="Michel", email="michel.chausson@gmail.com",
+                telephone="0612345678", adresse="8 Boulevard Haussmann", code_postal="75009",
+                ville="Paris", username="mchausson"
+            )
+            client3.set_password("password123")
+            db.session.add(client3)
+
+        db.session.commit()
+
+        # Seed sample demo orders if none exist
         if Order.query.count() == 0:
             print("Seeding sample demo orders...")
-            client1 = Client.query.filter_by(email="alice.martin@example.com").first()
-            if not client1:
-                client1 = Client(
-                    nom="Martin", prenom="Alice", email="alice.martin@example.com",
-                    telephone="0611223344", adresse="12 Rue des Fromages", code_postal="75002",
-                    ville="Paris", username="amartin"
-                )
-                client1.set_password("password123")
-                db.session.add(client1)
-
-            client2 = Client.query.filter_by(email="jean.dupont@example.com").first()
-            if not client2:
-                client2 = Client(
-                    nom="Dupont", prenom="Jean", email="jean.dupont@example.com",
-                    telephone="0612345678", adresse="45 Avenue de la République", code_postal="69002",
-                    ville="Lyon", username="jdupont"
-                )
-                client2.set_password("password123")
-                db.session.add(client2)
-
-            client3 = Client.query.filter_by(email="michel.chausson@gmail.com").first()
-            if not client3:
-                client3 = Client(
-                    nom="CHAUSSON", prenom="Michel", email="michel.chausson@gmail.com",
-                    telephone="0612345678", adresse="8 Boulevard Haussmann", code_postal="75009",
-                    ville="Paris", username="mchausson"
-                )
-                client3.set_password("password123")
-                db.session.add(client3)
-
-            db.session.commit()
-
             camembert = Product.query.filter_by(name="Camembert de Normandie AOP").first()
             brie = Product.query.filter_by(name="Brie de Meaux AOP").first()
             beaufort = Product.query.filter_by(name="Beaufort d'été AOP").first()

@@ -30,7 +30,7 @@ def test_checkout():
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
 
     # 1. Login user
-    login_data = urllib.parse.urlencode({"username": "amartin", "password": "mypassword123"}).encode('utf-8')
+    login_data = urllib.parse.urlencode({"username": "amartin", "password": "password123"}).encode('utf-8')
     req = urllib.request.Request(f"{BASE_URL}/login", data=login_data, method="POST")
     res = opener.open(req)
     assert res.status == 200

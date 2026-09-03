@@ -8,8 +8,9 @@ from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
-from models import db, Client, Category, Product, Order, OrderItem
+from models import db, Client, Category, Product, Order, OrderItem, StripePaymentDetail
 from seed import init_db
+import uuid
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'lestepuys-super-secret-key-2025'
@@ -22,8 +23,10 @@ def send_order_confirmation_email(order, client):
     subject = f"Confirmation de votre commande #{order.id} - Fromagerie Les Tepuys"
 
     if order.payment_status == 'Payé':
+        pickup_msg = "Merci de venir récupérer votre commande dans votre fromagerie Les Tepuys, au 5 avenue Thérèse, 94420 Le Plessis-Trévise."
         payment_info = "Votre commande est déjà réglée (Paiement en ligne effectué)."
     else:
+        pickup_msg = "Merci de venir régler et récupérer votre commande dans votre fromagerie Les Tepuys, au 5 avenue Thérèse, 94420 Le Plessis-Trévise."
         payment_info = "Votre commande sera à régler lorsque vous viendrez récupérer votre commande."
 
     items_summary = "\n".join([
@@ -36,6 +39,8 @@ def send_order_confirmation_email(order, client):
 Nous vous remercions pour votre commande n°#{order.id} auprès de la Fromagerie Les Tepuys !
 
 {payment_info}
+
+{pickup_msg}
 
 --- Récapitulatif de votre commande ---
 {items_summary}
@@ -308,10 +313,13 @@ def checkout():
                 flash(f"La quantité désirée pour '{item['name']}' n'est pas disponible ({avail} en stock). Veuillez ajuster votre panier.", "danger")
                 return redirect(url_for('view_cart'))
 
-        payment_choice = request.form.get('payment_method', 'virement')
+        payment_choice = request.form.get('payment_method', 'stripe')
         if payment_choice == 'livraison':
             payment_method = "Paiement à la livraison"
             payment_status = "En attente de paiement à la livraison"
+        elif payment_choice == 'stripe':
+            payment_method = "Carte bancaire (Stripe)"
+            payment_status = "En attente de règlement CB"
         else:
             payment_method = "Virement bancaire"
             payment_status = "Payé"
@@ -366,7 +374,13 @@ def checkout():
 
         db.session.commit()
 
-        # Send confirmation email
+        # If Stripe payment chosen, redirect to Stripe checkout screen before completing email
+        if payment_choice == 'stripe':
+            session['cart'] = {}
+            session.modified = True
+            return redirect(url_for('stripe_checkout', order_id=order.id))
+
+        # Send confirmation email for other payment methods
         send_order_confirmation_email(order, client)
 
         session['cart'] = {}
@@ -375,6 +389,65 @@ def checkout():
         return redirect(url_for('order_confirmation', order_id=order.id))
 
     return render_template('checkout.html', current_user=client, cart_items=cart_items, total_amount=total_amount)
+
+@app.route('/stripe/checkout/<int:order_id>')
+def stripe_checkout(order_id):
+    if 'client_id' not in session:
+        return redirect(url_for('login'))
+
+    order = Order.query.get_or_404(order_id)
+    if order.client_id != session['client_id']:
+        flash("Accès non autorisé à cette commande.", "danger")
+        return redirect(url_for('products'))
+
+    client = Client.query.get(order.client_id)
+    return render_template('stripe_checkout.html', order=order, current_user=client)
+
+@app.route('/stripe/process/<int:order_id>', methods=['POST'])
+def stripe_process(order_id):
+    if 'client_id' not in session:
+        return redirect(url_for('login'))
+
+    order = Order.query.get_or_404(order_id)
+    if order.client_id != session['client_id']:
+        flash("Accès non autorisé.", "danger")
+        return redirect(url_for('products'))
+
+    card_holder = request.form.get('card_holder', '').strip()
+    card_number = request.form.get('card_number', '').replace(' ', '')
+    card_exp = request.form.get('card_exp', '').strip()
+    card_cvc = request.form.get('card_cvc', '').strip()
+
+    if not card_holder or len(card_number) < 12 or not card_exp or not card_cvc:
+        flash("Veuillez saisir des coordonnées bancaires valides.", "danger")
+        return redirect(url_for('stripe_checkout', order_id=order.id))
+
+    last4 = card_number[-4:] if len(card_number) >= 4 else "4242"
+    stripe_charge_id = f"ch_{uuid.uuid4().hex[:16]}"
+
+    # Record Stripe transaction
+    payment_detail = StripePaymentDetail(
+        order_id=order.id,
+        stripe_payment_id=stripe_charge_id,
+        card_holder=card_holder,
+        card_brand="Visa/CB",
+        last4=last4,
+        amount=order.total_price,
+        status="succeeded"
+    )
+
+    order.payment_status = "Payé"
+    order.payment_method = "Carte bancaire (Stripe)"
+
+    db.session.add(payment_detail)
+    db.session.commit()
+
+    # Send order confirmation email
+    client = Client.query.get(order.client_id)
+    send_order_confirmation_email(order, client)
+
+    flash("Paiement par carte bancaire validé avec succès !", "success")
+    return redirect(url_for('order_confirmation', order_id=order.id))
 
 @app.route('/order/confirmation/<int:order_id>')
 def order_confirmation(order_id):

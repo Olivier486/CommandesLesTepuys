@@ -20,7 +20,7 @@ def test_admin_orders():
     print("Unauthenticated access redirected to login.")
 
     # 2. Login as regular user -> try accessing admin page -> access denied redirect to products
-    login_user = urllib.parse.urlencode({"username": "amartin", "password": "mypassword123"}).encode('utf-8')
+    login_user = urllib.parse.urlencode({"username": "amartin", "password": "password123"}).encode('utf-8')
     req = urllib.request.Request(f"{BASE_URL}/login", data=login_user, method="POST")
     res = opener.open(req)
 

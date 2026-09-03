@@ -11,14 +11,23 @@ def test_cart():
     cj = http.cookiejar.CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
 
-    # 1. Add item 1 (product id 1 - Faisselle artisanale)
-    add_data = urllib.parse.urlencode({"product_id": "1", "quantity": "2"}).encode('utf-8')
+    from models import Product
+    with app.app_context():
+        p1 = Product.query.filter_by(name="Faisselle artisanale").first() or Product.query.get(1)
+        p2 = Product.query.filter_by(name="Camembert de Normandie AOP").first() or Product.query.get(2)
+        p1_id = str(p1.id)
+        p2_id = str(p2.id)
+        p1_name = p1.name
+        p2_name = p2.name
+
+    # 1. Add item 1
+    add_data = urllib.parse.urlencode({"product_id": p1_id, "quantity": "2"}).encode('utf-8')
     req = urllib.request.Request(f"{BASE_URL}/cart/add", data=add_data, method="POST")
     res = opener.open(req)
     assert res.status == 200
 
-    # 2. Add item 2 (product id 2 - Camembert)
-    add_data2 = urllib.parse.urlencode({"product_id": "2", "quantity": "1"}).encode('utf-8')
+    # 2. Add item 2
+    add_data2 = urllib.parse.urlencode({"product_id": p2_id, "quantity": "1"}).encode('utf-8')
     req = urllib.request.Request(f"{BASE_URL}/cart/add", data=add_data2, method="POST")
     res = opener.open(req)
     assert res.status == 200
@@ -26,12 +35,12 @@ def test_cart():
     # 3. View cart
     res = opener.open(f"{BASE_URL}/cart")
     html = res.read().decode('utf-8')
-    assert "Faisselle artisanale" in html
-    assert "Camembert de Normandie" in html
+    assert p1_name in html
+    assert p2_name in html
     print("Items present in cart.")
 
     # 4. Update quantity of product 1 to 5
-    update_data = urllib.parse.urlencode({"product_id": "1", "quantity": "5"}).encode('utf-8')
+    update_data = urllib.parse.urlencode({"product_id": p1_id, "quantity": "5"}).encode('utf-8')
     req = urllib.request.Request(f"{BASE_URL}/cart/update", data=update_data, method="POST")
     res = opener.open(req)
     assert res.status == 200
@@ -43,15 +52,15 @@ def test_cart():
     print("Quantity update verified.")
 
     # 5. Remove product 2
-    req = urllib.request.Request(f"{BASE_URL}/cart/remove/2", method="POST")
+    req = urllib.request.Request(f"{BASE_URL}/cart/remove/{p2_id}", method="POST")
     res = opener.open(req)
     assert res.status == 200
 
     # Verify removal
     res = opener.open(f"{BASE_URL}/cart")
     html = res.read().decode('utf-8')
-    assert "Camembert de Normandie" not in html
-    assert "Faisselle artisanale" in html
+    assert p2_name not in html
+    assert p1_name in html
     print("Item removal verified.")
 
 if __name__ == "__main__":
