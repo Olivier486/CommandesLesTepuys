@@ -14,3 +14,7 @@
   current_user = Client.query.get(session['client_id'])
 127.0.0.1 - - [08/Sep/2026 18:19:46] "GET /admin/orders HTTP/1.1" 200 -
 127.0.0.1 - - [08/Sep/2026 18:19:47] "GET /admin/products HTTP/1.1" 200 -
+ * Detected change in '/app/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 631-326-424

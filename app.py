@@ -250,14 +250,14 @@ def update_cart():
             product = Product.query.get(int(product_id))
             if product and quantity > product.stock:
                 flash(f"Désolé, la quantité désirée pour '{product.name}' n'est pas disponible ({product.stock} disponible(s)).", "warning")
-                return redirect(url_for('view_cart'))
+                return redirect(request.referrer or url_for('view_cart'))
             cart[product_id]['quantity'] = quantity
             flash("Panier mis à jour.", "success")
 
         session['cart'] = cart
         session.modified = True
 
-    return redirect(url_for('view_cart'))
+    return redirect(request.referrer or url_for('view_cart'))
 
 @app.route('/cart/remove/<int:product_id>', methods=['POST'])
 def remove_from_cart(product_id):
