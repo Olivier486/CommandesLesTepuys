@@ -16,7 +16,10 @@
                         <input type="text" class="form-control" id="username" name="username" required placeholder="Saisissez votre identifiant">
                     </div>
                     <div class="mb-3">
-                        <label for="password" class="form-label fw-bold">Mot de passe</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label for="password" class="form-label fw-bold mb-0">Mot de passe</label>
+                            <a href="{{ url_for('forgot_password') }}" class="small text-danger fw-bold text-decoration-none"><i class="bi bi-key-fill me-1"></i>Mot de passe oublié ?</a>
+                        </div>
                         <input type="password" class="form-control" id="password" name="password" required placeholder="Saisissez votre mot de passe">
                     </div>
 
@@ -24,6 +27,13 @@
                         <button type="submit" class="btn btn-tepuys btn-lg fw-bold"><i class="bi bi-shield-lock-fill me-2"></i>Se connecter</button>
                     </div>
                 </form>
+
+                {% if show_reset_prompt %}
+                <div class="alert alert-warning text-center mt-3 mb-0 py-2 small shadow-sm">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Mot de passe erroné. <a href="{{ url_for('forgot_password') }}" class="fw-bold text-dark text-decoration-underline">Réinitialiser par SMS 4 chiffres</a>
+                </div>
+                {% endif %}
+
                 <div class="text-center mt-3">
                     <p class="mb-0">Nouveau client ? <a href="{{ url_for('register') }}" class="text-primary fw-bold">Créer un compte</a></p>
                 </div>

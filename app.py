@@ -691,6 +691,7 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    show_reset_prompt = False
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
@@ -709,9 +710,77 @@ def login():
                 return redirect(url_for('admin_orders'))
             return redirect(url_for('products'))
         else:
-            flash("Nom d'utilisateur ou mot de passe incorrect.", "danger")
+            show_reset_prompt = True
+            flash("Nom d'utilisateur ou mot de passe incorrect. Vous pouvez réinitialiser votre mot de passe via code SMS.", "danger")
 
-    return render_template('login.html')
+    return render_template('login.html', show_reset_prompt=show_reset_prompt)
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        identifier = request.form.get('identifier', '').strip()
+        client = Client.query.filter(
+            (Client.username == identifier) | (Client.telephone == identifier) | (Client.email == identifier)
+        ).first()
+
+        if not client:
+            flash("Aucun compte client trouvé avec ces informations.", "danger")
+            return render_template('forgot_password.html')
+
+        # Generate a 4-digit SMS verification code
+        import random
+        sms_code = str(random.randint(1000, 9999))
+
+        session['reset_client_id'] = client.id
+        session['reset_sms_code'] = sms_code
+        session['reset_phone'] = client.telephone
+
+        # Print/Log simulated SMS code
+        print(f"--- [SIMULATION SMS] Code à 4 chiffres envoyé au {client.telephone} : {sms_code} ---")
+        flash(f"Code SMS de confirmation à 4 chiffres envoyé au {client.telephone} (Code de test : {sms_code}).", "info")
+
+        return redirect(url_for('reset_password'))
+
+    return render_template('forgot_password.html')
+
+@app.route('/reset-password', methods=['GET', 'POST'])
+def reset_password():
+    if 'reset_client_id' not in session or 'reset_sms_code' not in session:
+        flash("Veuillez d'abord demander un code SMS de réinitialisation.", "warning")
+        return redirect(url_for('forgot_password'))
+
+    reset_phone = session.get('reset_phone', '')
+
+    if request.method == 'POST':
+        sms_code = request.form.get('sms_code', '').strip()
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        if sms_code != session.get('reset_sms_code'):
+            flash("Code SMS à 4 chiffres incorrect. Veuillez vérifier le code saisi.", "danger")
+            return render_template('reset_password.html', reset_phone=reset_phone)
+
+        if not new_password or len(new_password) < 4:
+            flash("Le nouveau mot de passe doit contenir au moins 4 caractères.", "danger")
+            return render_template('reset_password.html', reset_phone=reset_phone)
+
+        if new_password != confirm_password:
+            flash("Les deux mots de passe ne correspondent pas.", "danger")
+            return render_template('reset_password.html', reset_phone=reset_phone)
+
+        client = Client.query.get(session['reset_client_id'])
+        if client:
+            client.set_password(new_password)
+            db.session.commit()
+
+            session.pop('reset_client_id', None)
+            session.pop('reset_sms_code', None)
+            session.pop('reset_phone', None)
+
+            flash("Votre mot de passe a été réinitialisé avec succès ! Vous pouvez maintenant vous connecter.", "success")
+            return redirect(url_for('login'))
+
+    return render_template('reset_password.html', reset_phone=reset_phone)
 
 @app.route('/logout')
 def logout():
