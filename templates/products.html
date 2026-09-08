@@ -45,8 +45,29 @@
                 </div>
             </div>
             <div class="col-lg-5 text-center mt-3 mt-lg-0">
-                <img src="{{ url_for('static', filename='images/familles-categories-fromage.png') }}" alt="Familles de fromage" class="img-fluid rounded shadow-sm border" style="max-height: 220px; object-fit: contain;">
+                <a href="#" data-bs-toggle="modal" data-bs-target="#cheeseImageModal" title="Cliquez pour agrandir l'illustration des familles de fromages">
+                    <img src="{{ url_for('static', filename='images/familles-categories-fromage.png') }}" alt="Familles de fromage" class="img-fluid rounded shadow-sm border cursor-pointer hover-zoom" style="max-height: 220px; object-fit: contain; cursor: pointer;">
+                </a>
+                <div class="small text-muted mt-1"><i class="bi bi-zoom-in me-1"></i>Cliquez sur l'image pour l'agrandir</div>
             </div>
+
+<!-- Modal Agrandissement Photo Familles de Fromages -->
+<div class="modal fade" id="cheeseImageModal" tabindex="-1" aria-labelledby="cheeseImageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white py-2">
+                <h5 class="modal-header-title modal-title fw-bold" id="cheeseImageModalLabel"><i class="bi bi-pie-chart-fill text-warning me-2"></i>Guide des Familles de Fromages</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body text-center p-3 bg-light">
+                <img src="{{ url_for('static', filename='images/familles-categories-fromage.png') }}" alt="Familles et catégories de fromages" class="img-fluid rounded shadow">
+            </div>
+            <div class="modal-footer bg-white py-2">
+                <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
         </div>
     </div>
 </div>
