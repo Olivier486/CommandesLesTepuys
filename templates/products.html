@@ -99,33 +99,48 @@
                     {{ product.description if product.description else "Produit de qualité sélectionné par la Fromagerie Les Tepuys." }}
                 </p>
 
-                <!-- Add or Remove from Cart Form -->
+                <!-- Add, Update Quantity or Remove from Cart Form -->
                 {% set pid_str = product.id|string %}
-                {% if cart and pid_str in cart %}
-                <form action="{{ url_for('remove_from_cart', product_id=product.id) }}" method="POST" class="mt-3">
-                    <button type="submit" class="btn btn-success fw-bold w-100 shadow-sm" title="Cliquez pour désélectionner ce produit">
-                        <i class="bi bi-check-circle-fill me-1"></i> Sélectionné (Retirer)
-                    </button>
-                </form>
-                {% else %}
                 {% if product.stock > 0 %}
-                <form action="{{ url_for('add_to_cart') }}" method="POST" class="mt-3">
-                    <input type="hidden" name="product_id" value="{{ product.id }}">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white">Qté</span>
-                        <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" class="form-control text-center" style="max-width: 70px;">
-                        <button type="submit" class="btn btn-tepuys fw-bold flex-grow-1">
-                            <i class="bi bi-cart-plus me-1"></i> Ajouter
-                        </button>
+                <div class="mt-3">
+                    {% if cart and pid_str in cart %}
+                    {% set current_qty = cart[pid_str].quantity %}
+                    <div class="d-flex gap-1 align-items-center">
+                        <form action="{{ url_for('update_cart') }}" method="POST" class="d-flex flex-grow-1">
+                            <input type="hidden" name="product_id" value="{{ product.id }}">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white px-2">Qté</span>
+                                <input type="number" name="quantity" value="{{ current_qty }}" min="1" max="{{ product.stock }}" class="form-control text-center px-1" style="max-width: 65px;" onchange="this.form.submit()">
+                                <button type="submit" class="btn btn-success fw-bold flex-grow-1 text-nowrap px-2" title="Produit dans le panier. Cliquez pour mettre à jour la quantité.">
+                                    <i class="bi bi-check-lg me-1"></i>Ajouté
+                                </button>
+                            </div>
+                        </form>
+                        <form action="{{ url_for('remove_from_cart', product_id=product.id) }}" method="POST">
+                            <button type="submit" class="btn btn-outline-danger fw-bold" title="Retirer du panier">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        </form>
                     </div>
-                </form>
+                    {% else %}
+                    <form action="{{ url_for('add_to_cart') }}" method="POST">
+                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white px-2">Qté</span>
+                            <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" class="form-control text-center px-1" style="max-width: 65px;">
+                            <button type="submit" class="btn btn-tepuys fw-bold flex-grow-1 text-nowrap px-2">
+                                <i class="bi bi-cart-plus me-1"></i>Ajouter
+                            </button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
                 {% else %}
                 <div class="mt-3">
                     <button class="btn btn-secondary fw-bold w-100" disabled>
                         <i class="bi bi-x-circle me-1"></i> Produit indisponible
                     </button>
                 </div>
-                {% endif %}
                 {% endif %}
             </div>
         </div>
