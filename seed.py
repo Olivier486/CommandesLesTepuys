@@ -19,7 +19,18 @@ def init_db(app):
                 db.session.commit()
                 print("Migration automatique : colonne 'stock' ajoutée à la table 'products'.")
             except Exception as e:
-                print(f"Notice migration : {e}")
+                print(f"Notice migration stock : {e}")
+
+        try:
+            db.session.execute(db.text("SELECT is_active FROM products LIMIT 1"))
+        except Exception:
+            db.session.rollback()
+            try:
+                db.session.execute(db.text("ALTER TABLE products ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT 1"))
+                db.session.commit()
+                print("Migration automatique : colonne 'is_active' ajoutée à la table 'products'.")
+            except Exception as e:
+                print(f"Notice migration is_active : {e}")
 
         # Check if categories exist
         if Category.query.count() == 0:

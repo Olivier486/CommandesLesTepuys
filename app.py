@@ -149,14 +149,15 @@ def products():
 
             if current_category.slug == 'fromages':
                 products_list = Product.query.filter(
-                    (Product.category_id == current_category.id) | (Product.category_id.in_(cheese_sub_ids))
+                    Product.is_active == True,
+                    ((Product.category_id == current_category.id) | (Product.category_id.in_(cheese_sub_ids)))
                 ).all()
             else:
-                products_list = Product.query.filter_by(category_id=current_category.id).all()
+                products_list = Product.query.filter_by(category_id=current_category.id, is_active=True).all()
         else:
-            products_list = Product.query.all()
+            products_list = Product.query.filter_by(is_active=True).all()
     else:
-        products_list = Product.query.all()
+        products_list = Product.query.filter_by(is_active=True).all()
 
     return render_template(
         'products.html',
@@ -570,6 +571,54 @@ def admin_products():
     categories = Category.query.all()
     products_list = Product.query.order_by(Product.name.asc()).all()
     return render_template('admin_products.html', products=products_list, categories=categories)
+
+@app.route('/admin/products/add', methods=['POST'])
+@admin_required
+def add_product():
+    category_id = request.form.get('category_id')
+    name = request.form.get('name', '').strip()
+    price_str = request.form.get('price', '0')
+    stock_str = request.form.get('stock', '50')
+    description = request.form.get('description', '').strip()
+
+    if not name or not category_id:
+        flash("Veuillez remplir au moins le nom et la catégorie du produit.", "danger")
+        return redirect(url_for('admin_products'))
+
+    try:
+        price = float(price_str)
+        stock = int(stock_str)
+    except ValueError:
+        flash("Prix ou stock invalide.", "danger")
+        return redirect(url_for('admin_products'))
+
+    product = Product(
+        category_id=int(category_id),
+        name=name,
+        price=price,
+        stock=stock,
+        description=description,
+        is_active=True
+    )
+
+    db.session.add(product)
+    db.session.commit()
+    flash(f"Nouveau produit '{product.name}' ajouté avec succès au catalogue.", "success")
+    return redirect(url_for('admin_products'))
+
+@app.route('/admin/products/<int:product_id>/toggle-active', methods=['POST'])
+@admin_required
+def toggle_product_active(product_id):
+    product = Product.query.get_or_404(product_id)
+    product.is_active = not product.is_active
+    db.session.commit()
+
+    if product.is_active:
+        flash(f"Le produit '{product.name}' a été remis en stock / activé au catalogue.", "success")
+    else:
+        flash(f"Le produit '{product.name}' a été déstocké du catalogue.", "warning")
+
+    return redirect(request.referrer or url_for('admin_products'))
 
 @app.route('/admin/products/<int:product_id>/update', methods=['POST'])
 @admin_required

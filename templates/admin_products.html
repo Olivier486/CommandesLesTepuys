@@ -40,6 +40,9 @@
 <div class="card shadow-sm border-0 rounded-3">
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
         <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-list-stars me-2"></i>Liste de tous les produits ({{ products|length }})</h5>
+        <button type="button" class="btn btn-warning fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#addProductModal">
+            <i class="bi bi-plus-circle-fill me-1"></i> Ajouter un produit
+        </button>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -57,22 +60,29 @@
                 </thead>
                 <tbody>
                     {% for product in products %}
-                    <tr>
+                    <tr class="{% if not product.is_active %}table-secondary text-muted{% endif %}">
                         <td class="fw-bold">#{{ product.id }}</td>
-                        <td><span class="badge bg-light text-dark border">{{ product.category.name }}</span></td>
-                        <td class="fw-bold text-dark">{{ product.name }}</td>
+                        <td><span class="badge {% if product.is_active %}bg-light text-dark border{% else %}bg-secondary text-light{% endif %}">{{ product.category.name }}</span></td>
+                        <td class="fw-bold {% if product.is_active %}text-dark{% else %}text-muted text-decoration-line-through{% endif %}">
+                            {{ product.name }}
+                            {% if not product.is_active %}
+                            <span class="badge bg-secondary ms-1">Déstocké</span>
+                            {% endif %}
+                        </td>
                         <form action="{{ url_for('update_product_stock', product_id=product.id) }}" method="POST">
                             <td>
                                 <div class="input-group input-group-sm">
-                                    <input type="number" step="0.01" min="0" name="price" value="{{ '%.2f'|format(product.price) }}" class="form-control fw-bold">
+                                    <input type="number" step="0.01" min="0" name="price" value="{{ '%.2f'|format(product.price) }}" class="form-control fw-bold" {% if not product.is_active %}disabled{% endif %}>
                                     <span class="input-group-text">€</span>
                                 </div>
                             </td>
                             <td>
-                                <input type="number" min="0" name="stock" value="{{ product.stock }}" class="form-control form-control-sm text-center fw-bold">
+                                <input type="number" min="0" name="stock" value="{{ product.stock }}" class="form-control form-control-sm text-center fw-bold" {% if not product.is_active %}disabled{% endif %}>
                             </td>
                             <td>
-                                {% if product.stock <= 0 %}
+                                {% if not product.is_active %}
+                                    <span class="badge bg-secondary"><i class="bi bi-archive me-1"></i>Hors stock</span>
+                                {% elif product.stock <= 0 %}
                                     <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rupture (0)</span>
                                 {% elif product.stock <= 5 %}
                                     <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i>Faible ({{ product.stock }})</span>
@@ -81,15 +91,78 @@
                                 {% endif %}
                             </td>
                             <td class="text-end pe-4">
-                                <button type="submit" class="btn btn-sm btn-primary fw-bold">
-                                    <i class="bi bi-save me-1"></i> Enregistrer
-                                </button>
-                            </td>
+                                <div class="d-inline-flex gap-1">
+                                    <button type="submit" class="btn btn-sm btn-primary fw-bold" {% if not product.is_active %}disabled{% endif %}>
+                                        <i class="bi bi-save me-1"></i> Enregistrer
+                                    </button>
                         </form>
+                                    <form action="{{ url_for('toggle_product_active', product_id=product.id) }}" method="POST" class="d-inline">
+                                        {% if product.is_active %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger fw-bold" title="Déstocker le produit du catalogue (masqué pour les clients)">
+                                            <i class="bi bi-archive-fill me-1"></i> Déstocker
+                                        </button>
+                                        {% else %}
+                                        <button type="submit" class="btn btn-sm btn-success fw-bold" title="Remettre le produit en stock au catalogue">
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i> Remettre en stock
+                                        </button>
+                                        {% endif %}
+                                    </form>
+                                </div>
+                            </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ajouter un Produit -->
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white py-3">
+                <h5 class="modal-title fw-bold" id="addProductModalLabel"><i class="bi bi-plus-circle-fill text-warning me-2"></i>Ajouter un Nouveau Produit</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <form action="{{ url_for('add_product') }}" method="POST">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="category_id" class="form-label fw-bold">Catégorie</label>
+                        <select name="category_id" id="category_id" class="form-select" required>
+                            <option value="" disabled selected>-- Choisir une catégorie --</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }} {% if cat.parent %}({{ cat.parent.name }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label fw-bold">Nom du produit / fromage</label>
+                        <input type="text" name="name" id="name" class="form-control" placeholder="ex: Tome de Savoie Fermière" required>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label for="price" class="form-label fw-bold">Prix (€ TTC)</label>
+                            <input type="number" step="0.01" min="0" name="price" id="price" class="form-control" value="0.00" required>
+                        </div>
+                        <div class="col-6">
+                            <label for="stock" class="form-label fw-bold">Stock Initial</label>
+                            <input type="number" min="0" name="stock" id="stock" class="form-control" value="50" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label fw-bold">Description / Origine</label>
+                        <textarea name="description" id="description" class="form-control" rows="3" placeholder="Informations d'affinage, origine, lait cru..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-warning fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Créer le produit</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

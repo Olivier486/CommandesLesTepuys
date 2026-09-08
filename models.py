@@ -47,6 +47,7 @@ class Product(db.Model):
     stock = db.Column(db.Integer, nullable=False, default=50)
     description = db.Column(db.Text, nullable=True)
     image_url = db.Column(db.String(255), nullable=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
 
 class Order(db.Model):
     __tablename__ = 'orders'
