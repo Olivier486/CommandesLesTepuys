@@ -78,7 +78,7 @@
                         <form action="{{ url_for('update_product_stock', product_id=product.id) }}" method="POST">
                             <input type="hidden" name="price" value="{{ product.price }}">
                             <td>
-                                <input type="number" min="1" name="stock" value="{{ product.stock + 20 }}" class="form-control form-control-sm text-center fw-bold">
+                                <input type="number" min="0" name="stock" value="" placeholder="Nouveau stock..." class="form-control form-control-sm text-center fw-bold" required>
                             </td>
                             <td class="text-end pe-4">
                                 <button type="submit" class="btn btn-sm btn-success fw-bold shadow-sm">
