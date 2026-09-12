@@ -420,7 +420,9 @@ def stripe_process(order_id):
     card_cvc = request.form.get('card_cvc', '').strip()
 
     if not card_holder or len(card_number) < 12 or not card_exp or not card_cvc:
-        flash("Veuillez saisir des coordonnées bancaires valides.", "danger")
+        order.statut_stripe = "Echouée"
+        db.session.commit()
+        flash("Échec du paiement par carte bancaire. Les coordonnées saisies sont invalides.", "danger")
         return redirect(url_for('stripe_checkout', order_id=order.id))
 
     last4 = card_number[-4:] if len(card_number) >= 4 else "4242"
@@ -437,20 +439,48 @@ def stripe_process(order_id):
         status="succeeded"
     )
 
-    order.payment_status = "Payé"
-    order.payment_method = "Paiement par carte bancaire (Stripe)"
     order.stripe_session_id = stripe_session_id
     order.statut_stripe = "Payée"
 
-    db.session.add(payment_detail)
+    if order.statut_stripe == "Payée":
+        order.payment_status = "Payé"
+        order.payment_method = "Paiement par carte bancaire (Stripe)"
+        db.session.add(payment_detail)
+        db.session.commit()
+
+        # Send order confirmation email
+        client = Client.query.get(order.client_id)
+        send_order_confirmation_email(order, client)
+
+        flash("Paiement par carte bancaire validé avec succès !", "success")
+        return redirect(url_for('order_confirmation', order_id=order.id))
+    else:
+        db.session.commit()
+        flash(f"Paiement non finalisé (Statut Stripe : {order.statut_stripe}). Veuillez réessayer.", "warning")
+        return redirect(url_for('stripe_checkout', order_id=order.id))
+
+@app.route('/order/<int:order_id>/cancel', methods=['POST'])
+def cancel_order(order_id):
+    if 'client_id' not in session:
+        return redirect(url_for('login'))
+
+    order = Order.query.get_or_404(order_id)
+    if order.client_id != session['client_id'] and not session.get('is_admin'):
+        flash("Accès non autorisé.", "danger")
+        return redirect(url_for('products'))
+
+    order.statut_stripe = "Annulée"
+    order.payment_status = "Annulée"
+
+    # Restore product stock for canceled order items
+    for item in order.items:
+        prod = Product.query.get(item.product_id)
+        if prod:
+            prod.stock += item.quantity
+
     db.session.commit()
-
-    # Send order confirmation email
-    client = Client.query.get(order.client_id)
-    send_order_confirmation_email(order, client)
-
-    flash("Paiement par carte bancaire validé avec succès !", "success")
-    return redirect(url_for('order_confirmation', order_id=order.id))
+    flash(f"Votre commande #{order.id} a été annulée.", "info")
+    return redirect(url_for('products'))
 
 @app.route('/order/confirmation/<int:order_id>')
 def order_confirmation(order_id):

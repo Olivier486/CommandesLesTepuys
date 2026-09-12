@@ -1,0 +1,24 @@
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 123-396-847
+127.0.0.1 - - [12/Sep/2026 09:56:57] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [12/Sep/2026 09:56:58] "[32mPOST /login?next= HTTP/1.1[0m" 302 -
+/app/app.py:115: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  current_user = Client.query.get(session['client_id'])
+127.0.0.1 - - [12/Sep/2026 09:56:58] "GET /products HTTP/1.1" 200 -
+127.0.0.1 - - [12/Sep/2026 09:56:58] "GET /static/images/familles-categories-fromage.png HTTP/1.1" 200 -
+127.0.0.1 - - [12/Sep/2026 09:56:59] "GET /products HTTP/1.1" 200 -
+127.0.0.1 - - [12/Sep/2026 09:56:59] "[36mGET /static/images/familles-categories-fromage.png HTTP/1.1[0m" 304 -
+/app/app.py:180: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  product = Product.query.get(int(product_id))
+127.0.0.1 - - [12/Sep/2026 09:57:00] "[32mPOST /cart/add HTTP/1.1[0m" 302 -
+127.0.0.1 - - [12/Sep/2026 09:57:00] "GET /products HTTP/1.1" 200 -
+127.0.0.1 - - [12/Sep/2026 09:57:00] "[36mGET /static/images/familles-categories-fromage.png HTTP/1.1[0m" 304 -
+/app/app.py:288: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  client = Client.query.get(session['client_id'])
+127.0.0.1 - - [12/Sep/2026 09:57:00] "GET /checkout HTTP/1.1" 200 -

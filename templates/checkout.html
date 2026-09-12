@@ -97,9 +97,14 @@
                                 <span class="fs-5 fw-bold text-dark">Total à payer :</span>
                                 <span class="fs-3 fw-bold text-success">{{ "%.2f"|format(total_amount) }} €</span>
                             </div>
-                            <button type="submit" class="btn btn-tepuys btn-lg w-100 fw-bold shadow">
-                                <i class="bi bi-check-circle-fill me-2"></i> Confirmer la Commande
-                            </button>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-tepuys btn-lg w-100 fw-bold shadow">
+                                    <i class="bi bi-check-circle-fill me-2"></i> Confirmer la Commande
+                                </button>
+                                <a href="{{ url_for('products') }}" class="btn btn-outline-danger fw-bold">
+                                    <i class="bi bi-x-circle-fill me-1"></i> Annuler la commande
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
