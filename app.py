@@ -33,6 +33,32 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 init_db(app)
 
+def generate_recap_file(order):
+    client = order.client
+    date_str = order.created_at.strftime('%d/%m/%Y %H:%M:%S') if order.created_at else datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+    recap_lines = [
+        "=== BON DE COMMANDE - FROMAGERIE LES TEPUYS ===",
+        f"Date: {date_str}",
+        f"Client: {client.prenom} {client.nom}" if client else "Client: Inconnu",
+        f"Email: {client.email} | Tel: {client.telephone}" if client else "",
+        f"Adresse: {client.adresse}, {client.code_postal} {client.ville}" if client else "",
+        f"Mode de Paiement: {order.payment_method}",
+        f"Statut Paiement: {order.payment_status}",
+        "-----------------------------------------------",
+        "PRODUITS COMMANDÉS:"
+    ]
+
+    for item in order.items:
+        subtotal = item.unit_price * item.quantity
+        recap_lines.append(f"  - {item.product_name} x{item.quantity} @ {item.unit_price:.2f}€ = {subtotal:.2f}€")
+
+    recap_lines.append("-----------------------------------------------")
+    recap_lines.append(f"TOTAL COMMANDE TTC: {order.total_price:.2f} €")
+    recap_lines.append("===============================================")
+
+    return "\n".join(recap_lines)
+
+
 def send_order_confirmation_email(order, client):
     subject = f"Confirmation de votre commande #{order.id} - Fromagerie Les Tepuys"
 
@@ -341,35 +367,13 @@ def checkout():
             payment_status = "En attente de règlement CB"
             statut_stripe = "En attente"
 
-        now_str = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-        recap_lines = [
-            f"=== BON DE COMMANDE - FROMAGERIE LES TEPUYS ===",
-            f"Date: {now_str}",
-            f"Client: {client.prenom} {client.nom}",
-            f"Email: {client.email} | Tel: {client.telephone}",
-            f"Adresse: {client.adresse}, {client.code_postal} {client.ville}",
-            f"Mode de Paiement: {payment_method}",
-            f"Statut Paiement: {payment_status}",
-            f"-----------------------------------------------",
-            f"PRODUITS COMMANDÉS:"
-        ]
-
-        for item in cart_items:
-            recap_lines.append(f"  - {item['name']} x{item['quantity']} @ {item['price']:.2f}€ = {item['subtotal']:.2f}€")
-
-        recap_lines.append(f"-----------------------------------------------")
-        recap_lines.append(f"TOTAL COMMANDE TTC: {total_amount:.2f} €")
-        recap_lines.append(f"===============================================")
-
-        recap_file_text = "\n".join(recap_lines)
-
         order = Order(
             client_id=client.id,
             total_price=total_amount,
             payment_method=payment_method,
             payment_status=payment_status,
             statut_stripe=statut_stripe,
-            recap_file=recap_file_text
+            recap_file=""
         )
 
         db.session.add(order)
@@ -390,6 +394,7 @@ def checkout():
             if prod:
                 prod.stock = max(0, prod.stock - item['quantity'])
 
+        order.recap_file = generate_recap_file(order)
         db.session.commit()
 
         # If Stripe payment chosen, create a Stripe Checkout Session via Stripe API
@@ -477,6 +482,7 @@ def stripe_success(order_id):
         )
         db.session.add(payment_detail)
 
+    order.recap_file = generate_recap_file(order)
     db.session.commit()
 
     # Send confirmation email
@@ -505,6 +511,7 @@ def stripe_cancel(order_id):
         if prod:
             prod.stock += item.quantity
 
+    order.recap_file = generate_recap_file(order)
     db.session.commit()
     flash(f"La transaction Stripe pour la commande #{order.id} a été annulée.", "warning")
     return redirect(url_for('products'))
@@ -528,6 +535,7 @@ def cancel_order(order_id):
         if prod:
             prod.stock += item.quantity
 
+    order.recap_file = generate_recap_file(order)
     db.session.commit()
     flash(f"Votre commande #{order.id} a été annulée.", "info")
     return redirect(url_for('products'))
@@ -561,6 +569,7 @@ def update_order_status(order_id):
     if new_method:
         order.payment_method = new_method
 
+    order.recap_file = generate_recap_file(order)
     db.session.commit()
     flash(f"Le statut de la commande #{order.id} a été mis à jour : '{new_status}' ({order.payment_method}).", "success")
     return redirect(request.referrer or url_for('admin_orders'))
