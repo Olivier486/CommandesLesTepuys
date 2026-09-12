@@ -41,7 +41,7 @@ class StripePaymentTestCase(unittest.TestCase):
         res = self.app.post('/checkout', data={'payment_method': 'stripe'}, follow_redirects=False)
         self.assertEqual(res.status_code, 302)
 
-        order_id = int(res.location.split('/')[-1])
+        order_id = int(res.location.split('?')[0].split('/')[-1])
 
         with app.app_context():
             order = db.session.get(Order, order_id)
