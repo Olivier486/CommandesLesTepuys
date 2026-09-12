@@ -318,9 +318,11 @@ def checkout():
         if payment_choice == 'livraison':
             payment_method = "Paiement sur place"
             payment_status = "En attente de paiement sur place"
+            statut_stripe = "En attente"
         else:
             payment_method = "Carte bancaire (Stripe)"
             payment_status = "En attente de règlement CB"
+            statut_stripe = "En attente"
 
         now_str = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         recap_lines = [
@@ -349,6 +351,7 @@ def checkout():
             total_price=total_amount,
             payment_method=payment_method,
             payment_status=payment_status,
+            statut_stripe=statut_stripe,
             recap_file=recap_file_text
         )
 
@@ -421,12 +424,12 @@ def stripe_process(order_id):
         return redirect(url_for('stripe_checkout', order_id=order.id))
 
     last4 = card_number[-4:] if len(card_number) >= 4 else "4242"
-    stripe_charge_id = f"ch_{uuid.uuid4().hex[:16]}"
+    stripe_session_id = f"cs_test_{uuid.uuid4().hex[:16]}"
 
     # Record Stripe transaction
     payment_detail = StripePaymentDetail(
         order_id=order.id,
-        stripe_payment_id=stripe_charge_id,
+        stripe_payment_id=stripe_session_id,
         card_holder=card_holder,
         card_brand="Visa/CB",
         last4=last4,
@@ -436,6 +439,8 @@ def stripe_process(order_id):
 
     order.payment_status = "Payé"
     order.payment_method = "Paiement par carte bancaire (Stripe)"
+    order.stripe_session_id = stripe_session_id
+    order.statut_stripe = "Payée"
 
     db.session.add(payment_detail)
     db.session.commit()

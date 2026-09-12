@@ -32,6 +32,28 @@ def init_db(app):
             except Exception as e:
                 print(f"Notice migration is_active : {e}")
 
+        try:
+            db.session.execute(db.text("SELECT stripe_session_id FROM orders LIMIT 1"))
+        except Exception:
+            db.session.rollback()
+            try:
+                db.session.execute(db.text("ALTER TABLE orders ADD COLUMN stripe_session_id VARCHAR(255)"))
+                db.session.commit()
+                print("Migration automatique : colonne 'stripe_session_id' ajoutée à la table 'orders'.")
+            except Exception as e:
+                print(f"Notice migration stripe_session_id : {e}")
+
+        try:
+            db.session.execute(db.text("SELECT statut_stripe FROM orders LIMIT 1"))
+        except Exception:
+            db.session.rollback()
+            try:
+                db.session.execute(db.text("ALTER TABLE orders ADD COLUMN statut_stripe VARCHAR(50) DEFAULT 'En attente'"))
+                db.session.commit()
+                print("Migration automatique : colonne 'statut_stripe' ajoutée à la table 'orders'.")
+            except Exception as e:
+                print(f"Notice migration statut_stripe : {e}")
+
         # Check if categories exist
         if Category.query.count() == 0:
             print("Seeding categories...")
