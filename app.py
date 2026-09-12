@@ -316,14 +316,11 @@ def checkout():
 
         payment_choice = request.form.get('payment_method', 'stripe')
         if payment_choice == 'livraison':
-            payment_method = "Paiement à la livraison"
-            payment_status = "En attente de paiement à la livraison"
-        elif payment_choice == 'stripe':
+            payment_method = "Paiement sur place"
+            payment_status = "En attente de paiement sur place"
+        else:
             payment_method = "Carte bancaire (Stripe)"
             payment_status = "En attente de règlement CB"
-        else:
-            payment_method = "Virement bancaire"
-            payment_status = "Payé"
 
         now_str = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         recap_lines = [
@@ -438,7 +435,7 @@ def stripe_process(order_id):
     )
 
     order.payment_status = "Payé"
-    order.payment_method = "Carte bancaire (Stripe)"
+    order.payment_method = "Paiement par carte bancaire (Stripe)"
 
     db.session.add(payment_detail)
     db.session.commit()

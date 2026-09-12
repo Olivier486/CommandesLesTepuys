@@ -1,0 +1,85 @@
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 123-396-847
+127.0.0.1 - - [09/Sep/2026 11:38:08] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [09/Sep/2026 11:38:10] "[32mPOST /login?next= HTTP/1.1[0m" 302 -
+/app/app.py:115: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  current_user = Client.query.get(session['client_id'])
+127.0.0.1 - - [09/Sep/2026 11:38:10] "GET /products HTTP/1.1" 200 -
+127.0.0.1 - - [09/Sep/2026 11:38:10] "GET /static/images/familles-categories-fromage.png HTTP/1.1" 200 -
+127.0.0.1 - - [09/Sep/2026 11:38:11] "GET /products?cat=chevres-et-brebis HTTP/1.1" 200 -
+127.0.0.1 - - [09/Sep/2026 11:38:11] "[36mGET /static/images/familles-categories-fromage.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [09/Sep/2026 11:38:28] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [09/Sep/2026 11:38:29] "[32mPOST /login?next= HTTP/1.1[0m" 302 -
+127.0.0.1 - - [09/Sep/2026 11:38:29] "GET /products HTTP/1.1" 200 -
+127.0.0.1 - - [09/Sep/2026 11:38:29] "GET /static/images/familles-categories-fromage.png HTTP/1.1" 200 -
+127.0.0.1 - - [09/Sep/2026 11:38:30] "GET /products?cat=chevres-et-brebis HTTP/1.1" 200 -
+127.0.0.1 - - [09/Sep/2026 11:38:30] "[36mGET /static/images/familles-categories-fromage.png HTTP/1.1[0m" 304 -
+/app/app.py:180: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  product = Product.query.get(int(product_id))
+127.0.0.1 - - [09/Sep/2026 11:38:33] "[32mPOST /cart/add HTTP/1.1[0m" 302 -
+127.0.0.1 - - [09/Sep/2026 11:38:33] "GET /products?cat=chevres-et-brebis HTTP/1.1" 200 -
+127.0.0.1 - - [09/Sep/2026 11:38:33] "[36mGET /static/images/familles-categories-fromage.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [09/Sep/2026 11:38:34] "GET /cart HTTP/1.1" 200 -
+/app/app.py:288: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  client = Client.query.get(session['client_id'])
+127.0.0.1 - - [09/Sep/2026 11:38:35] "GET /checkout HTTP/1.1" 200 -
+/app/app.py:311: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  product_obj = Product.query.get(item['id'])
+/app/app.py:372: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  prod = Product.query.get(item['id'])
+127.0.0.1 - - [09/Sep/2026 11:38:35] "[32mPOST /checkout HTTP/1.1[0m" 302 -
+/app/app.py:404: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  client = Client.query.get(order.client_id)
+127.0.0.1 - - [09/Sep/2026 11:38:36] "GET /stripe/checkout/4 HTTP/1.1" 200 -
+/app/app.py:447: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  client = Client.query.get(order.client_id)
+127.0.0.1 - - [09/Sep/2026 11:38:36] "[32mPOST /stripe/process/4 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [09/Sep/2026 11:38:37] "GET /order/confirmation/4 HTTP/1.1" 200 -
+ * Detected change in '/app/app.py', reloading
+--- [SIMULATION EMAIL] Envoyé à alice.martin@example.com ---
+Bonjour Alice,
+
+Nous vous remercions pour votre commande n°#4 auprès de la Fromagerie Les Tepuys !
+
+Votre commande est déjà réglée (Paiement en ligne effectué).
+
+Merci de venir récupérer votre commande dans votre fromagerie Les Tepuys, au 5 avenue Thérèse, 94420 Le Plessis-Trévise.
+
+--- Récapitulatif de votre commande ---
+  - Crottin de Chavignol AOP x1 (3.80 €)
+
+Total TTC : 3.80 €
+Mode de paiement : Carte bancaire (Stripe)
+Statut du paiement : Payé
+
+Coordonnées :
+Alice Martin
+12 Rue des Fromages, 75002 Paris
+Téléphone : 0611223344
+
+À très bientôt,
+L'équipe Fromagerie Les Tepuys
+https://www.lestepuys.com
+
+----------------------------------
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 123-396-847
+ * Detected change in '/app/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 123-396-847
+ * Detected change in '/app/test_checkout.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 123-396-847
+ * Detected change in '/app/test_stripe.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 123-396-847

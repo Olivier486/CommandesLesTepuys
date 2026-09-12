@@ -68,7 +68,7 @@ class StripePaymentTestCase(unittest.TestCase):
         with app.app_context():
             updated_order = db.session.get(Order, order_id)
             self.assertEqual(updated_order.payment_status, 'Payé')
-            self.assertEqual(updated_order.payment_method, 'Carte bancaire (Stripe)')
+            self.assertEqual(updated_order.payment_method, 'Paiement par carte bancaire (Stripe)')
 
             stripe_detail = StripePaymentDetail.query.filter_by(order_id=order_id).first()
             self.assertIsNotNone(stripe_detail)

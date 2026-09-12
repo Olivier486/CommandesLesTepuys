@@ -41,17 +41,16 @@ def test_checkout():
     res = opener.open(req)
     assert res.status == 200
 
-    # 3. Checkout with online payment
-    chk_data = urllib.parse.urlencode({"payment_method": "virement"}).encode('utf-8')
+    # 3. Checkout with Stripe payment
+    chk_data = urllib.parse.urlencode({"payment_method": "stripe"}).encode('utf-8')
     req = urllib.request.Request(f"{BASE_URL}/checkout", data=chk_data, method="POST")
     res = opener.open(req)
     assert res.status == 200
     html = res.read().decode('utf-8')
-    assert "Merci ! Votre commande" in html
-    assert "BON DE COMMANDE" in html
-    print("Checkout with online payment successful.")
+    assert "Paiement Sécurisé Stripe" in html
+    print("Checkout with Stripe payment screen successful.")
 
-    # 4. Add another product to cart and checkout with payment on delivery
+    # 4. Add another product to cart and checkout with payment on site
     add_data2 = urllib.parse.urlencode({"product_id": "2", "quantity": "1"}).encode('utf-8')
     req = urllib.request.Request(f"{BASE_URL}/cart/add", data=add_data2, method="POST")
     res = opener.open(req)
@@ -61,8 +60,8 @@ def test_checkout():
     res = opener.open(req)
     assert res.status == 200
     html2 = res.read().decode('utf-8')
-    assert "Paiement à la livraison" in html2
-    print("Checkout with payment on delivery successful.")
+    assert "Paiement sur place" in html2
+    print("Checkout with payment on site successful.")
 
 if __name__ == "__main__":
     test_email_function()
