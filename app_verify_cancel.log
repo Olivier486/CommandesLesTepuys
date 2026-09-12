@@ -22,3 +22,13 @@
 /app/app.py:288: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
   client = Client.query.get(session['client_id'])
 127.0.0.1 - - [12/Sep/2026 09:57:00] "GET /checkout HTTP/1.1" 200 -
+ * Detected change in '/app/app.py', reloading
+ * Restarting with stat
+ * Tip: There are .env files present. Install python-dotenv to use them.
+ * Debugger is active!
+ * Debugger PIN: 123-396-847
+ * Detected change in '/app/app.py', reloading
+ * Restarting with stat
+ * Tip: There are .env files present. Install python-dotenv to use them.
+ * Debugger is active!
+ * Debugger PIN: 123-396-847

@@ -2,6 +2,15 @@ import os
 import json
 import smtplib
 import csv
+
+# Simple .env loader
+if os.path.exists('.env'):
+    with open('.env', 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                k, v = line.split('=', 1)
+                os.environ.setdefault(k.strip(), v.strip())
 from io import StringIO
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -116,13 +125,16 @@ def inject_global_data():
         if current_user and current_user.is_admin:
             low_stock_count = Product.query.filter(Product.stock <= 5).count()
 
+    stripe_public_key = os.environ.get('STRIPE_PUBLIC_KEY', 'pk_test_51Q5x8pKJ8X2Y3Z4W5V6U7T8S9R0Q1P2O3N4M5L6K7J8I9H0G1F2E3D4C5B6A7')
+
     return dict(
         main_categories=main_categories,
         cheese_subcategories=cheese_subcategories,
         cart=cart,
         cart_count=cart_count,
         current_user=current_user,
-        low_stock_count=low_stock_count
+        low_stock_count=low_stock_count,
+        stripe_public_key=stripe_public_key
     )
 
 @app.route('/')
