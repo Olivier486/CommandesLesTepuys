@@ -391,12 +391,12 @@ def checkout():
 
         db.session.commit()
 
-        # If Stripe payment chosen, redirect to Stripe Checkout Session URL or fallback
+        # If Stripe payment chosen, create a Stripe Checkout Session via Stripe API
         if payment_choice == 'stripe':
             session['cart'] = {}
             session.modified = True
 
-            stripe_secret_key = os.environ.get('STRIPE_SECRET_KEY')
+            stripe_secret_key = os.environ.get('STRIPE_SECRET_KEY', '').strip()
             if stripe and stripe_secret_key and not stripe_secret_key.endswith('...'):
                 try:
                     stripe.api_key = stripe_secret_key
@@ -419,11 +419,20 @@ def checkout():
                     )
                     order.stripe_session_id = checkout_session.id
                     db.session.commit()
+
+                    # Redirect directly to Stripe's hosted checkout page
                     return redirect(checkout_session.url, code=303)
                 except Exception as e:
-                    print(f"Stripe API Redirect Exception: {e}")
-
-            return redirect(url_for('stripe_checkout', order_id=order.id))
+                    print(f"Stripe Checkout API Exception: {e}")
+                    flash(f"Erreur d'initialisation de la session Stripe : {e}", "danger")
+                    return redirect(url_for('order_confirmation', order_id=order.id))
+            else:
+                # If secret key is not set or placeholder, simulate successful redirection to Stripe success callback
+                sim_session_id = f"cs_sim_{uuid.uuid4().hex[:16]}"
+                order.stripe_session_id = sim_session_id
+                db.session.commit()
+                flash("Information : Clé Stripe secrète non configurée en local. Simulation du débranchement Stripe.", "info")
+                return redirect(url_for('stripe_success', order_id=order.id, session_id=sim_session_id))
 
         # Send confirmation email for other payment methods
         send_order_confirmation_email(order, client)
@@ -494,74 +503,6 @@ def stripe_cancel(order_id):
     db.session.commit()
     flash(f"La transaction Stripe pour la commande #{order.id} a été annulée.", "warning")
     return redirect(url_for('products'))
-
-@app.route('/stripe/checkout/<int:order_id>')
-def stripe_checkout(order_id):
-    if 'client_id' not in session:
-        return redirect(url_for('login'))
-
-    order = Order.query.get_or_404(order_id)
-    if order.client_id != session['client_id']:
-        flash("Accès non autorisé à cette commande.", "danger")
-        return redirect(url_for('products'))
-
-    client = Client.query.get(order.client_id)
-    return render_template('stripe_checkout.html', order=order, current_user=client)
-
-@app.route('/stripe/process/<int:order_id>', methods=['POST'])
-def stripe_process(order_id):
-    if 'client_id' not in session:
-        return redirect(url_for('login'))
-
-    order = Order.query.get_or_404(order_id)
-    if order.client_id != session['client_id']:
-        flash("Accès non autorisé.", "danger")
-        return redirect(url_for('products'))
-
-    card_holder = request.form.get('card_holder', '').strip()
-    card_number = request.form.get('card_number', '').replace(' ', '')
-    card_exp = request.form.get('card_exp', '').strip()
-    card_cvc = request.form.get('card_cvc', '').strip()
-
-    if not card_holder or len(card_number) < 12 or not card_exp or not card_cvc:
-        order.statut_stripe = "Echouée"
-        db.session.commit()
-        flash("Échec du paiement par carte bancaire. Les coordonnées saisies sont invalides.", "danger")
-        return redirect(url_for('stripe_checkout', order_id=order.id))
-
-    last4 = card_number[-4:] if len(card_number) >= 4 else "4242"
-    stripe_session_id = f"cs_test_{uuid.uuid4().hex[:16]}"
-
-    # Record Stripe transaction
-    payment_detail = StripePaymentDetail(
-        order_id=order.id,
-        stripe_payment_id=stripe_session_id,
-        card_holder=card_holder,
-        card_brand="Visa/CB",
-        last4=last4,
-        amount=order.total_price,
-        status="succeeded"
-    )
-
-    order.stripe_session_id = stripe_session_id
-    order.statut_stripe = "Payée"
-
-    if order.statut_stripe == "Payée":
-        order.payment_status = "Payé"
-        order.payment_method = "Paiement par carte bancaire (Stripe)"
-        db.session.add(payment_detail)
-        db.session.commit()
-
-        # Send order confirmation email
-        client = Client.query.get(order.client_id)
-        send_order_confirmation_email(order, client)
-
-        flash("Paiement par carte bancaire validé avec succès !", "success")
-        return redirect(url_for('order_confirmation', order_id=order.id))
-    else:
-        db.session.commit()
-        flash(f"Paiement non finalisé (Statut Stripe : {order.statut_stripe}). Veuillez réessayer.", "warning")
-        return redirect(url_for('stripe_checkout', order_id=order.id))
 
 @app.route('/order/<int:order_id>/cancel', methods=['POST'])
 def cancel_order(order_id):

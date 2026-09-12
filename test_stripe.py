@@ -40,7 +40,6 @@ class StripePaymentTestCase(unittest.TestCase):
         # Submit checkout with Stripe payment
         res = self.app.post('/checkout', data={'payment_method': 'stripe'}, follow_redirects=False)
         self.assertEqual(res.status_code, 302)
-        self.assertIn('/stripe/checkout/', res.location)
 
         order_id = int(res.location.split('/')[-1])
 
@@ -49,21 +48,11 @@ class StripePaymentTestCase(unittest.TestCase):
             self.assertIsNotNone(order)
             self.assertEqual(order.payment_status, 'En attente de règlement CB')
 
-        # Visit Stripe checkout page
-        res_stripe_page = self.app.get(f'/stripe/checkout/{order_id}')
-        self.assertEqual(res_stripe_page.status_code, 200)
-        self.assertIn(b'Paiement S\xc3\xa9curis\xc3\xa9 Stripe', res_stripe_page.data)
-
-        # Process Stripe payment
-        res_process = self.app.post(f'/stripe/process/{order_id}', data={
-            'card_holder': 'StripeUser Test',
-            'card_number': '4242 4242 4242 4242',
-            'card_exp': '12/28',
-            'card_cvc': '123'
-        }, follow_redirects=True)
+        # Visit Stripe success callback route directly
+        res_process = self.app.get(f'/stripe/success/{order_id}?session_id=cs_test_mock123', follow_redirects=True)
 
         self.assertEqual(res_process.status_code, 200)
-        self.assertIn(b'Paiement par carte bancaire valid\xc3\xa9', res_process.data)
+        self.assertIn(b'Paiement par carte bancaire Stripe valid\xc3\xa9', res_process.data)
 
         with app.app_context():
             updated_order = db.session.get(Order, order_id)
