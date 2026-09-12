@@ -20,7 +20,10 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from models import db, Client, Category, Product, Order, OrderItem, StripePaymentDetail
 from seed import init_db
 import uuid
-import stripe
+try:
+    import stripe
+except ImportError:
+    stripe = None
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'lestepuys-super-secret-key-2025'
@@ -394,7 +397,7 @@ def checkout():
             session.modified = True
 
             stripe_secret_key = os.environ.get('STRIPE_SECRET_KEY')
-            if stripe_secret_key and not stripe_secret_key.endswith('...'):
+            if stripe and stripe_secret_key and not stripe_secret_key.endswith('...'):
                 try:
                     stripe.api_key = stripe_secret_key
                     checkout_session = stripe.checkout.Session.create(
