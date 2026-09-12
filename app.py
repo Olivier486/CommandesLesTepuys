@@ -3,14 +3,15 @@ import json
 import smtplib
 import csv
 
-# Simple .env loader
-if os.path.exists('.env'):
-    with open('.env', 'r', encoding='utf-8') as f:
+# Robust .env loader
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+if os.path.exists(env_path):
+    with open(env_path, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip()
             if line and not line.startswith('#') and '=' in line:
                 k, v = line.split('=', 1)
-                os.environ.setdefault(k.strip(), v.strip())
+                os.environ[k.strip()] = v.strip().strip("'\"")
 from io import StringIO
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -397,7 +398,8 @@ def checkout():
             session.modified = True
 
             stripe_secret_key = os.environ.get('STRIPE_SECRET_KEY', '').strip()
-            if stripe and stripe_secret_key and stripe_secret_key.startswith('sk_'):
+
+            if stripe and stripe_secret_key and stripe_secret_key.startswith('sk_') and not stripe_secret_key.endswith('...'):
                 try:
                     stripe.api_key = stripe_secret_key
                     checkout_session = stripe.checkout.Session.create(
@@ -424,17 +426,17 @@ def checkout():
                     return redirect(checkout_session.url, code=303)
                 except Exception as e:
                     print(f"Stripe Checkout API Exception: {e}")
-                    flash(f"Notice Stripe : Clé secrète sk_test invalide ({e}). Veuillez renseigner votre clé STRIPE_SECRET_KEY (sk_test_...) dans le fichier .env de votre machine.", "warning")
+                    flash(f"Erreur d'appel Stripe API : {e}. Vérifiez votre clé secrète STRIPE_SECRET_KEY dans le fichier .env.", "warning")
                     sim_session_id = f"cs_sim_{uuid.uuid4().hex[:16]}"
                     order.stripe_session_id = sim_session_id
                     db.session.commit()
                     return redirect(url_for('stripe_success', order_id=order.id, session_id=sim_session_id))
             else:
-                # Fallback info for local environment without secret key
+                # Secret key missing or equals default placeholder 'sk_test_...'
                 sim_session_id = f"cs_sim_{uuid.uuid4().hex[:16]}"
                 order.stripe_session_id = sim_session_id
                 db.session.commit()
-                flash("Avis Stripe : Veuillez renseigner votre Clé Secrète Stripe (STRIPE_SECRET_KEY=sk_test_...) dans le fichier .env pour activer la redirection directe vers checkout.stripe.com. Redirection simulée.", "warning")
+                flash("Information : Veuillez ajouter votre clé secrète Stripe (STRIPE_SECRET_KEY=sk_test_...) dans le fichier .env pour ouvrir directement checkout.stripe.com.", "warning")
                 return redirect(url_for('stripe_success', order_id=order.id, session_id=sim_session_id))
 
         # Send confirmation email for other payment methods

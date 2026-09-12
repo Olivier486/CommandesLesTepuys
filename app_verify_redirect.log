@@ -8,19 +8,19 @@
  * Tip: There are .env files present. Install python-dotenv to use them.
  * Debugger is active!
  * Debugger PIN: 123-396-847
-127.0.0.1 - - [12/Sep/2026 18:03:14] "GET /login HTTP/1.1" 200 -
-127.0.0.1 - - [12/Sep/2026 18:03:15] "[32mPOST /login?next= HTTP/1.1[0m" 302 -
-/app/app.py:128: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+127.0.0.1 - - [12/Sep/2026 18:16:45] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [12/Sep/2026 18:16:46] "[32mPOST /login?next= HTTP/1.1[0m" 302 -
+/app/app.py:129: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
   current_user = Client.query.get(session['client_id'])
-127.0.0.1 - - [12/Sep/2026 18:03:15] "GET /products HTTP/1.1" 200 -
-127.0.0.1 - - [12/Sep/2026 18:03:15] "GET /static/images/familles-categories-fromage.png HTTP/1.1" 200 -
-127.0.0.1 - - [12/Sep/2026 18:03:16] "GET /products HTTP/1.1" 200 -
-127.0.0.1 - - [12/Sep/2026 18:03:16] "[36mGET /static/images/familles-categories-fromage.png HTTP/1.1[0m" 304 -
-/app/app.py:196: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+127.0.0.1 - - [12/Sep/2026 18:16:46] "GET /products HTTP/1.1" 200 -
+127.0.0.1 - - [12/Sep/2026 18:16:46] "GET /static/images/familles-categories-fromage.png HTTP/1.1" 200 -
+127.0.0.1 - - [12/Sep/2026 18:16:47] "GET /products HTTP/1.1" 200 -
+127.0.0.1 - - [12/Sep/2026 18:16:47] "[36mGET /static/images/familles-categories-fromage.png HTTP/1.1[0m" 304 -
+/app/app.py:197: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
   product = Product.query.get(int(product_id))
-127.0.0.1 - - [12/Sep/2026 18:03:17] "[32mPOST /cart/add HTTP/1.1[0m" 302 -
-127.0.0.1 - - [12/Sep/2026 18:03:17] "GET /products HTTP/1.1" 200 -
-127.0.0.1 - - [12/Sep/2026 18:03:17] "[36mGET /static/images/familles-categories-fromage.png HTTP/1.1[0m" 304 -
-/app/app.py:304: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+127.0.0.1 - - [12/Sep/2026 18:16:48] "[32mPOST /cart/add HTTP/1.1[0m" 302 -
+127.0.0.1 - - [12/Sep/2026 18:16:48] "GET /products HTTP/1.1" 200 -
+127.0.0.1 - - [12/Sep/2026 18:16:48] "[36mGET /static/images/familles-categories-fromage.png HTTP/1.1[0m" 304 -
+/app/app.py:305: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
   client = Client.query.get(session['client_id'])
-127.0.0.1 - - [12/Sep/2026 18:03:17] "GET /checkout HTTP/1.1" 200 -
+127.0.0.1 - - [12/Sep/2026 18:16:48] "GET /checkout HTTP/1.1" 200 -
