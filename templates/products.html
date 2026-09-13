@@ -176,4 +176,20 @@
     <a href="{{ url_for('products') }}" class="btn btn-tepuys">Voir tous les produits</a>
 </div>
 {% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const scrollPos = sessionStorage.getItem('products_scroll_pos');
+    if (scrollPos !== null) {
+        window.scrollTo(0, parseInt(scrollPos, 10));
+        sessionStorage.removeItem('products_scroll_pos');
+    }
+
+    document.querySelectorAll('form').forEach(function(form) {
+        form.addEventListener('submit', function() {
+            sessionStorage.setItem('products_scroll_pos', window.scrollY);
+        });
+    });
+});
+</script>
 {% endblock %}
