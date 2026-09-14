@@ -23,40 +23,46 @@ class ResetPasswordTestCase(unittest.TestCase):
             db.session.commit()
             self.client_id = client.id
 
-    def test_wrong_password_prompt_and_sms_reset(self):
+    def test_email_token_reset_flow(self):
         # 1. Login with incorrect password
         res_login_fail = self.app.post('/login', data={'username': 'testuser', 'password': 'wrongpassword'})
         self.assertEqual(res_login_fail.status_code, 200)
         self.assertIn(b'Mot de passe erron', res_login_fail.data)
-        self.assertIn(b'R\xc3\xa9initialiser par SMS', res_login_fail.data)
+        self.assertIn(b'R\xc3\xa9initialiser par email', res_login_fail.data)
 
-        # 2. Request SMS code on /forgot-password
-        res_forgot = self.app.post('/forgot-password', data={'identifier': 'testuser'}, follow_redirects=True)
+        # 2. Request email reset token on /forgot-password
+        res_forgot = self.app.post('/forgot-password', data={'email': 'test.client@example.com'}, follow_redirects=True)
         self.assertEqual(res_forgot.status_code, 200)
-        self.assertIn(b'Code SMS de confirmation', res_forgot.data)
+        self.assertIn(b'Un lien de r\xc3\xa9initialisation vous a \xc3\xa9t\xc3\xa9 envoy\xc3\xa9 par email', res_forgot.data)
 
-        with self.app.session_transaction() as sess:
-            sms_code = sess.get('reset_sms_code')
-            self.assertIsNotNone(sms_code)
-            self.assertEqual(len(sms_code), 4)
+        with app.app_context():
+            client = db.session.get(Client, self.client_id)
+            self.assertIsNotNone(client.reset_token)
+            self.assertIsNotNone(client.reset_token_expiration)
+            token = client.reset_token
 
-        # 3. Fail reset with invalid code
-        res_reset_fail = self.app.post('/reset-password', data={
-            'sms_code': '0000',
-            'new_password': 'newpassword123',
-            'confirm_password': 'newpassword123'
-        })
-        self.assertIn(b'Code SMS \xc3\xa0 4 chiffres incorrect', res_reset_fail.data)
+        # 3. Fail reset with invalid token
+        res_invalid_token = self.app.get('/reset-password?token=invalidtoken123', follow_redirects=True)
+        self.assertIn(b'Le lien de r\xc3\xa9initialisation est invalide', res_invalid_token.data)
 
-        # 4. Succeed reset with valid 4-digit code
+        # 4. Succeed reset with valid token
+        res_reset_page = self.app.get(f'/reset-password?token={token}')
+        self.assertEqual(res_reset_page.status_code, 200)
+        self.assertIn(b'Nouveau Mot de Passe', res_reset_page.data)
+
         res_reset_success = self.app.post('/reset-password', data={
-            'sms_code': sms_code,
+            'token': token,
             'new_password': 'newpassword123',
             'confirm_password': 'newpassword123'
         }, follow_redirects=True)
 
         self.assertEqual(res_reset_success.status_code, 200)
         self.assertIn(b'r\xc3\xa9initialis\xc3\xa9 avec succ\xc3\xa8s', res_reset_success.data)
+
+        with app.app_context():
+            updated_client = db.session.get(Client, self.client_id)
+            self.assertIsNone(updated_client.reset_token)
+            self.assertIsNone(updated_client.reset_token_expiration)
 
         # 5. Login with new password
         res_login_new = self.app.post('/login', data={'username': 'testuser', 'password': 'newpassword123'}, follow_redirects=True)

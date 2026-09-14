@@ -54,6 +54,18 @@ def init_db(app):
             except Exception as e:
                 print(f"Notice migration statut_stripe : {e}")
 
+        try:
+            db.session.execute(db.text("SELECT reset_token FROM clients LIMIT 1"))
+        except Exception:
+            db.session.rollback()
+            try:
+                db.session.execute(db.text("ALTER TABLE clients ADD COLUMN reset_token VARCHAR(100)"))
+                db.session.execute(db.text("ALTER TABLE clients ADD COLUMN reset_token_expiration DATETIME"))
+                db.session.commit()
+                print("Migration automatique : colonnes reset_token / reset_token_expiration ajoutées à la table 'clients'.")
+            except Exception as e:
+                print(f"Notice migration reset_token : {e}")
+
         # Check if categories exist
         if Category.query.count() == 0:
             print("Seeding categories...")

@@ -19,6 +19,8 @@ class Client(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
+    reset_token = db.Column(db.String(100), nullable=True)
+    reset_token_expiration = db.Column(db.DateTime, nullable=True)
 
     orders = db.relationship('Order', backref='client', lazy=True)
 

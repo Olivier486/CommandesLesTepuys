@@ -15,7 +15,7 @@ if os.path.exists(env_path):
 from io import StringIO
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
 from models import db, Client, Category, Product, Order, OrderItem, StripePaymentDetail
@@ -802,76 +802,103 @@ def login():
             return redirect(url_for('products'))
         else:
             show_reset_prompt = True
-            flash("Nom d'utilisateur ou mot de passe incorrect. Vous pouvez réinitialiser votre mot de passe via code SMS.", "danger")
+            flash("Nom d'utilisateur ou mot de passe incorrect. Vous pouvez réinitialiser votre mot de passe par lien email.", "danger")
 
     return render_template('login.html', show_reset_prompt=show_reset_prompt)
 
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        identifier = request.form.get('identifier', '').strip()
-        client = Client.query.filter(
-            (Client.username == identifier) | (Client.telephone == identifier) | (Client.email == identifier)
-        ).first()
+        email = request.form.get('email', '').strip()
+        client = Client.query.filter_by(email=email).first()
 
         if not client:
-            flash("Aucun compte client trouvé avec ces informations.", "danger")
+            flash("Si cette adresse email est associée à un compte, un lien de réinitialisation vous a été envoyé.", "info")
             return render_template('forgot_password.html')
 
-        # Generate a 4-digit SMS verification code
-        import random
-        sms_code = str(random.randint(1000, 9999))
+        token = uuid.uuid4().hex
+        client.reset_token = token
+        client.reset_token_expiration = datetime.utcnow() + timedelta(hours=1)
+        db.session.commit()
 
-        session['reset_client_id'] = client.id
-        session['reset_sms_code'] = sms_code
-        session['reset_phone'] = client.telephone
+        reset_url = url_for('reset_password', token=token, _external=True)
 
-        # Print/Log simulated SMS code
-        print(f"--- [SIMULATION SMS] Code à 4 chiffres envoyé au {client.telephone} : {sms_code} ---")
-        flash(f"Code SMS de confirmation à 4 chiffres envoyé au {client.telephone} (Code de test : {sms_code}).", "info")
+        subject = "Réinitialisation de votre mot de passe - Fromagerie Les Tepuys"
+        body = f"""Bonjour {client.prenom},
 
-        return redirect(url_for('reset_password'))
+Vous avez demandé la réinitialisation de votre mot de passe pour votre compte Fromagerie Les Tepuys.
+
+Veuillez cliquer sur le lien ci-dessous pour choisir un nouveau mot de passe (lien valable pendant 1 heure) :
+{reset_url}
+
+Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.
+
+Cordialement,
+L'équipe Fromagerie Les Tepuys
+"""
+
+        smtp_server = os.environ.get('SMTP_SERVER')
+        smtp_port = os.environ.get('SMTP_PORT', '587')
+        smtp_user = os.environ.get('SMTP_USER')
+        smtp_password = os.environ.get('SMTP_PASSWORD')
+
+        if smtp_server and smtp_user and smtp_password:
+            try:
+                msg = MIMEMultipart()
+                msg['From'] = smtp_user
+                msg['To'] = client.email
+                msg['Subject'] = subject
+                msg.attach(MIMEText(body, 'plain', 'utf-8'))
+
+                server = smtplib.SMTP(smtp_server, int(smtp_port))
+                server.starttls()
+                server.login(smtp_user, smtp_password)
+                server.sendmail(smtp_user, client.email, msg.as_string())
+                server.quit()
+                print(f"Email de réinitialisation envoyé à {client.email}")
+            except Exception as e:
+                print(f"Erreur lors de l'envoi de l'email de réinitialisation : {e}")
+        else:
+            print(f"--- [SIMULATION EMAIL RÉINITIALISATION] Envoyé à {client.email} ---\nLien : {reset_url}\n----------------------------------")
+
+        flash("Un lien de réinitialisation vous a été envoyé par email.", "info")
+        return redirect(url_for('login'))
 
     return render_template('forgot_password.html')
 
 @app.route('/reset-password', methods=['GET', 'POST'])
 def reset_password():
-    if 'reset_client_id' not in session or 'reset_sms_code' not in session:
-        flash("Veuillez d'abord demander un code SMS de réinitialisation.", "warning")
+    token = request.args.get('token') or request.form.get('token')
+    if not token:
+        flash("Lien de réinitialisation invalide.", "danger")
         return redirect(url_for('forgot_password'))
 
-    reset_phone = session.get('reset_phone', '')
+    client = Client.query.filter_by(reset_token=token).first()
+    if not client or not client.reset_token_expiration or client.reset_token_expiration < datetime.utcnow():
+        flash("Le lien de réinitialisation est invalide ou a expiré. Veuillez refaire une demande.", "danger")
+        return redirect(url_for('forgot_password'))
 
     if request.method == 'POST':
-        sms_code = request.form.get('sms_code', '').strip()
         new_password = request.form.get('new_password', '')
         confirm_password = request.form.get('confirm_password', '')
 
-        if sms_code != session.get('reset_sms_code'):
-            flash("Code SMS à 4 chiffres incorrect. Veuillez vérifier le code saisi.", "danger")
-            return render_template('reset_password.html', reset_phone=reset_phone)
-
         if not new_password or len(new_password) < 4:
             flash("Le nouveau mot de passe doit contenir au moins 4 caractères.", "danger")
-            return render_template('reset_password.html', reset_phone=reset_phone)
+            return render_template('reset_password.html', token=token)
 
         if new_password != confirm_password:
             flash("Les deux mots de passe ne correspondent pas.", "danger")
-            return render_template('reset_password.html', reset_phone=reset_phone)
+            return render_template('reset_password.html', token=token)
 
-        client = Client.query.get(session['reset_client_id'])
-        if client:
-            client.set_password(new_password)
-            db.session.commit()
+        client.set_password(new_password)
+        client.reset_token = None
+        client.reset_token_expiration = None
+        db.session.commit()
 
-            session.pop('reset_client_id', None)
-            session.pop('reset_sms_code', None)
-            session.pop('reset_phone', None)
+        flash("Votre mot de passe a été réinitialisé avec succès ! Vous pouvez maintenant vous connecter.", "success")
+        return redirect(url_for('login'))
 
-            flash("Votre mot de passe a été réinitialisé avec succès ! Vous pouvez maintenant vous connecter.", "success")
-            return redirect(url_for('login'))
-
-    return render_template('reset_password.html', reset_phone=reset_phone)
+    return render_template('reset_password.html', token=token)
 
 @app.route('/logout')
 def logout():
